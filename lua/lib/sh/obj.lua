@@ -3,6 +3,7 @@ local table_insert = table.insert
 
 local math_min = math.min
 local math_max = math.max
+local math_sqrt = math.sqrt
 
 local string_gmatch = string.gmatch
 local string_match = string.match

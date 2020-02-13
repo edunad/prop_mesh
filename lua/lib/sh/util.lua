@@ -1,5 +1,6 @@
 local math_round = math.Round
 local math_clamp_ = math.Clamp
+local math_huge = math.huge
 
 QUBELib = QUBELib or {}
 QUBELib.Util = QUBELib.Util or {}
@@ -27,4 +28,16 @@ QUBELib.Util.ClampVector = function(vec, min, max)
 	vec.z = math_clamp_(vec.z, min, max)
 	
 	return vec
+end
+
+QUBELib.Util.IsFinite = function(vec, min, max)
+	if QUBELib.Util.IsNan(x) then return false end
+	if x == math_huge then return false end
+	if x == -math_huge then return false end
+	
+	return true
+end
+
+QUBELib.Util.IsNan = function(x)
+	return x ~= x
 end

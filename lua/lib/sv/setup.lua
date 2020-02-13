@@ -23,9 +23,11 @@ net.Receive("qube_mesh_command", function( len, ply )
 	local ent = net.ReadEntity()
 	if not IsValid(ent) then return end
 	
-	local isowner = ent:GetOwner() == ply
+	local isowner = false
 	if ent.CPPIGetOwner then
 		isowner = ent:CPPIGetOwner() == ply
+	else
+		isowner = ent:GetOwner() == ply
 	end
 	
 	if not isowner then return end

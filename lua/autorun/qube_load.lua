@@ -10,6 +10,7 @@ if SERVER then
 	AddCSLuaFile("lib/cl/URLTexture.lua")
 	
 	-- Shared --
+	AddCSLuaFile("lib/sh/setup.lua")
 	AddCSLuaFile("lib/sh/meshParser.lua")
 	AddCSLuaFile("lib/sh/obj.lua")
 	AddCSLuaFile("lib/sh/queueSYS.lua")
@@ -30,7 +31,10 @@ if CLIENT then
 end
 
 -- SHARED --
+include("lib/sh/setup.lua")
 include("lib/sh/meshParser.lua")
 include("lib/sh/obj.lua")
 include("lib/sh/queueSYS.lua")
 include("lib/sh/util.lua")
+
+if SERVER then print("[QUBELib] Startup") end

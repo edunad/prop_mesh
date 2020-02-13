@@ -1,0 +1,13 @@
+{
+	"title"		:	"QUBE",
+	"type"		:	"entity",
+	"tags"		:	[ "build", "fun" ],
+	"description":	"OBJ prop loader",
+	"ignore"	:
+	[
+		".git*",
+		".gitignore",
+		"LICENSE",
+		"README.md"
+	]
+}

@@ -1,4 +1,5 @@
 local table_remove = table.remove
+local table_insert = table.insert
 
 QUBELib = QUBELib or {}
 QUBELib.MeshParser = QUBELib.MeshParser or {}
@@ -8,7 +9,7 @@ QUBELib.MeshParser.Threads = {}
 QUBELib.MeshParser.ClearMeshes = function (imeshes)
 	if not imeshes or #imeshes <= 0 then return end
 	for _, v in pairs(imeshes) do
-		if not v or v == NULL then continue end
+		if not v or v == NULL or not pcall( v.Draw, v ) then continue end
 		v:Destroy()
 	end
 end

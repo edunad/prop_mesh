@@ -1,4 +1,6 @@
-local math_clamp_ = math.Clamp
+
+ENT.Type = "anim"
+ENT.Base = "base_gmodentity"
 
 ENT.PrintName		= "QUBE"
 ENT.Author			= "FailCake"
@@ -8,7 +10,8 @@ ENT.Category		= "FailCake"
 ENT.Contact			= "https://failcake.me"
 ENT.Spawnable		= true
 
-cleanup.Register("qube_mesh")
+local math_clamp_ = math.Clamp
+local math_abs = math.abs
 
 -- Default SETTINGS ---------
 ENT.MAX_SAFE_VOLUME = 580
@@ -101,7 +104,7 @@ function ENT:VectorToSafe(meshData, scale)
 		local size_clamped = math_clamp_(size_actual, self.MIN_SAFE_VOLUME, self.MAX_SAFE_VOLUME)
 		local new = size_clamped / size
 		
-		if not math.isfinite(new) or math.abs(new) < 0.00000001 then return end
+		if not QUBELib.Util.IsFinite(new) or math_abs(new) < 0.00000001 then return end
 		fixedScale[i] = new
 	end
 	

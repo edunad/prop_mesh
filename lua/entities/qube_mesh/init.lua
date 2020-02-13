@@ -1,3 +1,11 @@
+local string_trim = string.Trim
+local string_find = string.find
+
+AddCSLuaFile( "cl_init.lua" ) -- Make sure clientside
+AddCSLuaFile( "shared.lua" )  -- and shared scripts are sent.
+ 
+include('shared.lua')
+
 ENT.SAVE_DATA = {}
 --- INIT ---
 
@@ -10,7 +18,13 @@ local function MakeQUBEEnt(ply, data)
 	if not ent:IsValid() then return nil end
 	
 	ent:SetPos(data.Pos)
-	ent:CPPISetOwner(ply)
+	
+	if ent.CPPISetOwner then 
+		ent:CPPISetOwner(ply)
+	else
+		ent:SetOwner(ply)
+	end
+	
 	ent:Spawn()
 	ent:Activate()
 	
@@ -114,7 +128,10 @@ end
 
 function ENT:Load(uri, textures, scale, phys)
 	if not uri or string_trim(uri) == "" then return end
-	local owner = self:CPPIGetOwner()
+	local owner = self:GetOwner()
+	if self.CPPIGetOwner then 
+		owner = self:CPPIGetOwner()
+	end
 	
 	-- FIX INPUT ---
 	scale = QUBELib.Util.ClampVector(scale or Vector(), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
