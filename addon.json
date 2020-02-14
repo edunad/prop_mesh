@@ -1,6 +1,6 @@
 {
 	"title"		:	"QUBE",
-	"type"		:	"entity",
+	"type"		:	"tool",
 	"tags"		:	[ "build", "fun" ],
 	"description":	"OBJ prop loader",
 	"ignore"	:
