@@ -7,6 +7,7 @@
 	[
 		".git*",
 		".gitignore",
+		"*.jpg",
 		"LICENSE",
 		"README.md"
 	]
