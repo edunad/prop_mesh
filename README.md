@@ -3,13 +3,24 @@
 > ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀THE FUN CANNOT BE HALTED
 
 QUBE allows you to use OBJ models as props using OBB collisions!
+## COMMANDS
+```
+SERVER :
+  sbox_maxqube_mesh <number> - Max Qubes per players
+```
+
 ## TODO
+### Mesh
+- [ ] Save parsed mesh on client as cache
+- [ ] Save textures on client as cache
+
+### Entity
+- [ ] Fix Adv.dup constrains
+- [ ] Server / Client code improvements
 - [ ] Add console commands to limit QUBE on client side
 - [ ] Add console commands server side for admins
-- [ ] Handle server failing to parse model
+- [ ] Handle server failing to parse model?
 - [ ] Better UI Panel
-- [ ] Server / Client code improvements
-- [ ] Fix Adv.dup constrains
 
 ## LINKS
 - Workshop : ???
