@@ -10,9 +10,11 @@ SERVER :
 ```
 
 ## TODO
+### Mesh
 - [ ] Save parsed mesh on client as cache
 - [ ] Save textures on client as cache
 
+### Entity
 - [ ] Fix Adv.dup constrains
 - [ ] Server / Client code improvements
 - [ ] Add console commands to limit QUBE on client side
