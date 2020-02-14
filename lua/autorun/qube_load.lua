@@ -21,6 +21,9 @@ end
 if SERVER then
 	include("lib/sv/setup.lua")
 	include("lib/sv/registry.lua")
+	
+	resource.AddSingleFile("materials/vgui/entities/qube_mesh.vtf")
+	resource.AddSingleFile("materials/vgui/entities/qube_mesh.vmt")
 end
 
 -- CLIENT --

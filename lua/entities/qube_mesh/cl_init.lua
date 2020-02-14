@@ -12,20 +12,20 @@ local math_rand = math.Rand
 --- SETTINGS ---
 ENT.AutomaticFrameAdvance = true
 ENT.DEFAULT_MATERIAL = CreateMaterial( "QUBE_DEFAULT_MATERIAL", "UnlitGeneric", {
-	["$basetexture"] = Material("models/debug/debugwhite"):GetTexture("$basetexture"),
+	["$basetexture"] = "models/debug/debugwhite",
 	["$model"] = "1",
 	["$decal"] = "1"
 })
 
-ENT.DEFAULT_MATERIAL_PHYS = CreateMaterial( "QUBE_DEFAULT_MATERIAL_PHYS_", "UnlitGeneric", {
-	["$basetexture"] = Material("models/debug/debugwhite"):GetTexture("$basetexture"),
+ENT.DEFAULT_MATERIAL_PHYS = CreateMaterial( "QUBE_DEFAULT_MATERIAL_PHYS", "UnlitGeneric", {
+	["$basetexture"] = "models/debug/debugwhite",
 	["$model"] = "1",
 	["$decal"] = "1"
 })
 
 ENT.DEFAULT_MATERIAL:SetVector("$color2", Vector(0, 0, 0))
 ENT.DEFAULT_MATERIAL_PHYS:SetVector("$color2", Vector(1, 1, 1))
-	
+
 ENT.DEBUG_MATERIAL = Material("models/wireframe")
 ENT.DEBUG_MATERIALS_COLORS = {
 	{0.90, 0.29, 0.23},
