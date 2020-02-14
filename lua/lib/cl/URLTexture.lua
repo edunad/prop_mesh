@@ -6,6 +6,7 @@ local table_remove = table.remove
 QUBELib = QUBELib or {}
 QUBELib.URLMaterial = QUBELib.URLMaterial or {}
 
+QUBELib.URLMaterial.USE_PROXY = true
 QUBELib.URLMaterial.MAX_TIMEOUT = 20
 QUBELib.URLMaterial.Materials = QUBELib.URLMaterial.Materials or {}
 QUBELib.URLMaterial.Panels = QUBELib.URLMaterial.Panels or {}
@@ -63,8 +64,13 @@ QUBELib.URLMaterial.LoadMaterialURL = function(uri, success, failure)
 			return
 		end
 	end
-
-	uri = uri:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub('"', "&quot;")
+	
+	if QUBELib.URLMaterial.USE_PROXY then
+		uri = "https://images.weserv.nl/?url=" .. uri:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub('"', "&quot;")
+	else
+		uri = uri:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub('"', "&quot;")
+	end
+	
 	PANEL:SetHTML([[
 		<html>
 			<head>
