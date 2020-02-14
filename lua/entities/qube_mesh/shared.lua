@@ -12,6 +12,7 @@ ENT.Spawnable		= true
 
 local math_clamp_ = math.Clamp
 local math_abs = math.abs
+local table_copy = table.Copy
 
 -- Default SETTINGS ---------
 ENT.MAX_SAFE_VOLUME = 580
@@ -140,7 +141,6 @@ function ENT:CreateOBBPhysics(minOBB, maxOBB)
 		self:SetSolid( SOLID_VPHYSICS )
 	else
 		self.CLIENT_PHYSICS_BOX = CreatePhysCollideBox( minOBB, maxOBB )
-		self:SetRenderBounds(minOBB, maxOBB)
 	end
 end
 
@@ -157,6 +157,10 @@ function ENT:SetDefaultPhysics()
 	local maxOBB = Vector(12, 12, 12)
 	
 	self:CreateOBBPhysics(minOBB, maxOBB)
+	
+	if CLIENT then 
+		self:SetRenderBounds(minOBB, maxOBB)
+	end
 end
 --- Physics ----
 ----------------
@@ -242,7 +246,7 @@ function ENT:LoadOBJ(uri, owner, onSuccess, onFail)
 				return QUBELib.MeshParser.QueueDone()
 			end
 			
-			self:SetStatus("Fetching model URL")
+			self:SetStatus("Fetching model")
 			http.Fetch(uri, function(body, len, headers, code)
 				local fileSize = #body
 				local fileType = headers["Content-Type"]

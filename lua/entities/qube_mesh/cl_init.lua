@@ -14,13 +14,15 @@ ENT.AutomaticFrameAdvance = true
 ENT.DEFAULT_MATERIAL = CreateMaterial( "QUBE_DEFAULT_MATERIAL", "UnlitGeneric", {
 	["$basetexture"] = "models/debug/debugwhite",
 	["$model"] = "1",
-	["$decal"] = "1"
+	["$decal"] = "1",
+	["$color2"] = Vector(0, 0, 0)
 })
 
 ENT.DEFAULT_MATERIAL_PHYS = CreateMaterial( "QUBE_DEFAULT_MATERIAL_PHYS", "UnlitGeneric", {
 	["$basetexture"] = "models/debug/debugwhite",
 	["$model"] = "1",
-	["$decal"] = "1"
+	["$decal"] = "1",
+	["$color2"] = Vector(1, 1, 1)
 })
 
 ENT.DEFAULT_MATERIAL:SetVector("$color2", Vector(0, 0, 0))
@@ -82,12 +84,12 @@ function ENT:BuildIMesh(meshData)
 	QUBELib.QueueSYS.Register({
 		callback = function()
 			if not IsValid(self) then return end
-		
+			self:ClearMeshes()
+			
 			local safeScale = self:VectorToSafe(meshData, meshData.scale)
 			local minOBB = meshData.minOBB * safeScale
 			local maxOBB = meshData.maxOBB * safeScale
 			
-			self:ClearMeshes()
 			self:SetRenderBounds( minOBB, maxOBB )
 			
 			for _, v in pairs(meshData.subMeshes) do
@@ -166,7 +168,7 @@ function ENT:OnPVSReload()
 	local safeScale = self:VectorToSafe(meshData, meshData.scale)
 	local minOBB = meshData.minOBB * safeScale
 	local maxOBB = meshData.maxOBB * safeScale
-		
+	
 	self:SetRenderBounds(minOBB, maxOBB)
 end
 --- UTIL ---
@@ -450,7 +452,7 @@ function ENT:CreateMenu()
 		maxMaterials = 20	
 	end
 	
-	local currentMesh = self.LOADED_MESH
+	local currentMesh = self.LAST_REQUESTED_MESH
 	local currentData = {
 		uri = "",
 		textures = {},
@@ -458,7 +460,7 @@ function ENT:CreateMenu()
 		phys = Vector(1, 1, 1)
 	}
 	
-	if self.LOADED_MESH then
+	if currentMesh then
 		currentData.uri = currentMesh.uri
 		currentData.scale = currentMesh.scale
 		currentData.phys = currentMesh.phys
