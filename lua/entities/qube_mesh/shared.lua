@@ -6,8 +6,8 @@ ENT.PrintName		= "QUBE"
 ENT.Author			= "FailCake"
 ENT.RenderGroup 	= RENDERGROUP_TRANSLUCENT
 ENT.AdminOnly		= false
-ENT.Category		= "FailCake"
-ENT.Contact			= "https://failcake.me"
+ENT.Category		= "Editors"
+ENT.Contact			= "https://github.com/edunad/qube"
 ENT.Spawnable		= true
 
 local math_clamp_ = math.Clamp
