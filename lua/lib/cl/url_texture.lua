@@ -1,4 +1,5 @@
 if SERVER then return error("[QUBELib]Tried to load 'URLTexture.lua' on SERVER") end
+
 local table_insert = table.insert
 local table_removeByValue = table.RemoveByValue
 local table_remove = table.remove
@@ -65,10 +66,9 @@ QUBELib.URLMaterial.LoadMaterialURL = function(uri, success, failure)
 		end
 	end
 	
+	local imgURL = uri:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub('"', "&quot;")
 	if QUBELib.URLMaterial.USE_PROXY then
-		uri = "https://images.weserv.nl/?url=" .. uri:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub('"', "&quot;")
-	else
-		uri = uri:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub('"', "&quot;")
+		imgURL = "https://images.weserv.nl/?url=" .. imgURL
 	end
 	
 	PANEL:SetHTML([[
@@ -113,7 +113,7 @@ QUBELib.URLMaterial.LoadMaterialURL = function(uri, success, failure)
 					};
 				</script>
 			
-				<img id="image" src="]].. uri ..[[" onerror="imageError()" onload="imageLoaded()" onabort="imageError()" />
+				<img id="image" src="]].. imgURL ..[[" onerror="imageError()" onload="imageLoaded()" onabort="imageError()" />
 			</body>
 		</html>
 	]])
@@ -134,7 +134,7 @@ QUBELib.URLMaterial.ClearPanels = function()
 end
 
 QUBELib.URLMaterial.CreateMaterial = function(name, baseTexture)
-	return CreateMaterial( name , "VertexLitGeneric", {
+	return CreateMaterial(name, "VertexLitGeneric", {
 		["$basetexture"] = baseTexture,
 		
 		["$alpha"] = "1",
@@ -158,6 +158,10 @@ hook.Add("Think", "__loadtexture_qube_mesh__", function()
 			local matName = material:GetName()
 			
 			local Mat = QUBELib.URLMaterial.CreateMaterial(matName .. CurTime(), matName)
+			if not Mat then
+				if v.failure then v.failure() end
+				return
+			end
 			
 			QUBELib.URLMaterial.Materials[v.uri] = Mat
 			v.panel:Remove()
@@ -167,7 +171,7 @@ hook.Add("Think", "__loadtexture_qube_mesh__", function()
 			table_remove( QUBELib.URLMaterial.Queue, k )
 			table_removeByValue(QUBELib.URLMaterial.Panels, v.panel)
 		elseif CurTime() > v.cooldown then
-			 if v.failure then v.failure() end
+			if v.failure then v.failure() end
 			 
 			table_remove( QUBELib.URLMaterial.Queue, k )
 			table_removeByValue(QUBELib.URLMaterial.Panels, v.panel)

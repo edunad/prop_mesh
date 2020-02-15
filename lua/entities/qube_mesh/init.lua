@@ -72,10 +72,11 @@ end
 
 function ENT:SetTextures(textures)
 	if not textures or #textures <= 0 then return end
+	self.MATERIAL_URLS = textures
+	
 	self.SAVE_DATA.textureURL = textures -- Save
 	self:SaveDupeData()
 	
-	self.MATERIAL_URLS = textures
 	self:SendTextures(textures)
 end
 

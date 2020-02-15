@@ -43,6 +43,11 @@ function ENT:Initialize()
 	
 	if CLIENT then
 		self:GenerateExtraRandomColors()
+		
+		timer.Simple(0.1, function()
+			self.DEFAULT_MATERIAL:SetVector("$color2", Vector(0, 0, 0))
+			self.DEFAULT_MATERIAL_PHYS:SetVector("$color2", Vector(1, 1, 1))
+		end)
 		return
 	end
 	

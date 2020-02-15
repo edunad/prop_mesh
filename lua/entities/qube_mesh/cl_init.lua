@@ -14,15 +14,13 @@ ENT.AutomaticFrameAdvance = true
 ENT.DEFAULT_MATERIAL = CreateMaterial( "QUBE_DEFAULT_MATERIAL", "UnlitGeneric", {
 	["$basetexture"] = "models/debug/debugwhite",
 	["$model"] = "1",
-	["$decal"] = "1",
-	["$color2"] = Vector(0, 0, 0)
+	["$decal"] = "1"
 })
 
 ENT.DEFAULT_MATERIAL_PHYS = CreateMaterial( "QUBE_DEFAULT_MATERIAL_PHYS", "UnlitGeneric", {
 	["$basetexture"] = "models/debug/debugwhite",
 	["$model"] = "1",
-	["$decal"] = "1",
-	["$color2"] = Vector(1, 1, 1)
+	["$decal"] = "1"
 })
 
 ENT.DEFAULT_MATERIAL:SetVector("$color2", Vector(0, 0, 0))
@@ -132,7 +130,7 @@ function ENT:LocalLoadMesh(uri, scale, phys)
 end
 
 function ENT:RetryModelParse()
-	if not ent.LAST_MODEL_ERRORED then return end
+	if not self.LAST_MODEL_ERRORED then return end
 	
 	local lastMesh = self.LAST_REQUESTED_MESH
 	if not lastMesh then return end
