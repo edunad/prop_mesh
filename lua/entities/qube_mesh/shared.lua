@@ -144,6 +144,12 @@ function ENT:CreateOBBPhysics(minOBB, maxOBB)
 	if SERVER then
 		self:PhysicsInitBox( minOBB, maxOBB )
 		self:SetSolid( SOLID_VPHYSICS )
+		
+		local phys = self:GetPhysicsObject()
+		if IsValid(phys) then
+			phys:EnableMotion( false )
+			phys:Sleep()
+		end
 	else
 		self.CLIENT_PHYSICS_BOX = CreatePhysCollideBox( minOBB, maxOBB )
 	end
