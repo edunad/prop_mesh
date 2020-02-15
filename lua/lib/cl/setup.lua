@@ -80,6 +80,7 @@ net.Receive("qube_mesh_command", function()
 		if input.IsKeyDown(KEY_LSHIFT) or input.IsKeyDown(KEY_RSHIFT) then
 			if not ent.LAST_MODEL_ERRORED then return end
 			ent:RetryModelParse()
+			return
 		end
 		
 		local owner = ent:GetOwner()
