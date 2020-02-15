@@ -77,25 +77,18 @@ net.Receive("qube_mesh_command", function()
 	elseif command == "ON_USE_PRESS" then
 		if not IsValid(ent) then return end
 		if input.IsKeyDown(KEY_LALT) or input.IsKeyDown(KEY_RALT) then return end -- Allow Sitting
+		if input.IsKeyDown(KEY_LSHIFT) or input.IsKeyDown(KEY_RSHIFT) then
+			if not ent.LAST_MODEL_ERRORED then return end
+			ent:RetryModelParse()
+		end
 		
-		local hasErrored = ent.LAST_MODEL_ERRORED
 		local owner = ent:GetOwner()
 		if ent.CPPIGetOwner then
 			owner = ent:CPPIGetOwner()
 		end
-	
+		
 		if LocalPlayer() == owner then
-			if hasErrored then
-				if input.IsKeyDown(KEY_LSHIFT) or input.IsKeyDown(KEY_RSHIFT) then
-					ent:RetryModelParse()
-				else
-					ent:CreateMenu()
-				end
-			else
-				ent:CreateMenu()
-			end
-		elseif hasErrored then
-			ent:RetryModelParse()
+			ent:CreateMenu()
 		end
 	end
 end)

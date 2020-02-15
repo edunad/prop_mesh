@@ -258,13 +258,6 @@ function ENT:DrawLOGO()
 end
 
 function ENT:DrawStatus(pos, ang)
-	local is_owner = false
-	if self.CPPIGetOwner then
-		is_owner = self:CPPIGetOwner() == LocalPlayer()
-	else
-		is_owner = self:GetOwner() == LocalPlayer()
-	end
-	
 	cam.Start3D2D(pos, ang, 0.18)
 		render.PushFilterMag(TEXFILTER.POINT)
 		render.PushFilterMin(TEXFILTER.POINT)
@@ -272,12 +265,8 @@ function ENT:DrawStatus(pos, ang)
 				draw.DrawText(tostring(self.LAST_STATUS), "DebugFixedSmall", 0, 50, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER )
 			end
 			
-			if hasErrored then
-				if is_owner then
-					draw.DrawText("USE + SHIFT to retry", "DebugFixedSmall", 0, 70, Color( 192, 57, 43, 255 ), TEXT_ALIGN_CENTER )
-				else
-					draw.DrawText("USE to retry", "DebugFixedSmall", 0, 70, Color( 192, 57, 43, 255 ), TEXT_ALIGN_CENTER )
-				end
+			if self.LAST_MODEL_ERRORED then
+				draw.DrawText("USE + SHIFT to retry", "DebugFixedSmall", 0, 70, Color( 192, 57, 43, 255 ), TEXT_ALIGN_CENTER )
 			end
 		render.PopFilterMag()
 		render.PopFilterMin()
