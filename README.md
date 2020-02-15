@@ -23,7 +23,7 @@ SERVER :
 - [ ] Better UI Panel
 
 ## LINKS
-- Workshop : ???
+- Workshop : https://steamcommunity.com/sharedfiles/filedetails/?id=1997179073
 
 ## SCREENSHOTS
 ![](https://i.imgur.com/5p3USX0.png)
