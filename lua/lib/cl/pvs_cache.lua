@@ -39,15 +39,11 @@ end
 
 hook.Add("NetworkEntityCreated", "__loadmodel_qube_mesh__", function(ent)
 	if not IsValid(ent) or not IsValid(LocalPlayer()) then return end
-		
 	if ent:GetClass() ~= "qube_mesh" then
 		QUBELib.PVSCache.Remove(ent:EntIndex())
 		return 
 	end
 	
-	if ent.OnPVSReload then 
-		ent:OnPVSReload()
-	end
-	
+	if ent.OnPVSReload then ent:OnPVSReload()end
 	QUBELib.PVSCache.ResolveNetCache(ent) 
 end)

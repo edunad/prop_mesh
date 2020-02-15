@@ -56,13 +56,16 @@ function ENT:SendLoadedMesh(ply)
 	self:SendLoadMesh(lastMesh.uri, lastMesh.scale, lastMesh.phys, ply)
 end
 
-function ENT:SendLoadMesh(uri, scale, phys, ply)
+function ENT:SendLoadMesh(uri, scale, phys, isAdmin, ply)
 	net.Start("qube_mesh_command")
 		net.WriteInt(self:EntIndex(), 32)
 		net.WriteString("MESH_LOAD")
-		net.WriteString(uri)
-		net.WriteVector(scale)
-		net.WriteVector(phys)
+		net.WriteTable({
+			isAdmin = isAdmin,
+			uri = uri,
+			scale = scale,
+			phys = phys
+		})
 	if ply then
 		net.Send(ply)	
 	else 
@@ -160,7 +163,7 @@ function ENT:Load(uri, textures, scale, phys)
 	self:SendLoadMesh(uri, scale, phys) -- Start client load
 	
 	-- Server load --
-	self:LoadOBJ(uri, owner, function(meshData)
+	self:LoadOBJ(uri, owner:IsAdmin(), function(meshData)
 		meshData.scale = scale
 		meshData.phys = phys
 		

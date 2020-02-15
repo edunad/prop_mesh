@@ -233,7 +233,7 @@ end
 
 -------------
 ---  OBJ  ---
-function ENT:LoadOBJ(uri, owner, onSuccess, onFail)
+function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 	local fetchBody = nil
 	local bodySize = nil
 	
@@ -261,12 +261,7 @@ function ENT:LoadOBJ(uri, owner, onSuccess, onFail)
 					return QUBELib.MeshParser.QueueDone()
 				end
 				
-				if not owner then
-					QUBELib.MeshParser.QueueDone()
-					return onFail("!! Failed to parse !!")
-				end
-				
-				if not owner:IsAdmin() then -- I don't trust admins xD
+				if not isAdmin then -- I don't trust admins xD
 					if fileSize > self.MAX_OBJ_SIZE_BYTES then
 						self:SetStatus("!! Model too big !!")
 						return QUBELib.MeshParser.QueueDone()
@@ -307,7 +302,7 @@ function ENT:LoadOBJ(uri, owner, onSuccess, onFail)
 				return coroutine.yield(true, "")
 			end
 			
-			local meshData = QUBELib.Obj.Parse(owner, fetchBody, true)
+			local meshData = QUBELib.Obj.Parse(isAdmin, fetchBody, true)
 			meshData.uri = uri
 			meshData.metadata = {
 				fileSize = bodySize

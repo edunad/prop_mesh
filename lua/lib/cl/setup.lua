@@ -11,20 +11,17 @@ net.Receive("qube_mesh_command", function()
 	local command = net.ReadString()
 	
 	if command == "MESH_LOAD" then
-		local uri = net.ReadString()
-		
-		local scale = net.ReadVector()
-		local phys = net.ReadVector()
+		local data = net.ReadTable()
 		
 		if not IsValid(ent) then
 			return QUBELib.PVSCache.CacheNetMessage(indx, command, function(newEnt)
 				if newEnt.LocalLoadMesh then
-					newEnt:LocalLoadMesh(uri, scale, phys)
+					newEnt:LocalLoadMesh(data)
 				end
 			end)
 		else
 			if ent.LocalLoadMesh then
-				ent:LocalLoadMesh(uri, scale, phys)
+				ent:LocalLoadMesh(data)
 			end
 		end
 	elseif command == "TEXTURE_LOAD" then

@@ -106,20 +106,15 @@ function ENT:ClearMeshes()
 	self.MESH_MODELS = {}
 end
 
-function ENT:LocalLoadMesh(uri, scale, phys)
+function ENT:LocalLoadMesh(requestData)
 	-- Cleanup --
 	self:Clear()
 	-- ------- --
 	
-	local owner = self:GetOwner()
-	if self.CPPIGetOwner then
-		owner = self:CPPIGetOwner()
-	end
-	
-	self.LAST_REQUESTED_MESH = {uri = uri, scale = scale, phys = phys}
-	self:LoadOBJ(uri, owner, function(meshData)
-		meshData.scale = scale
-		meshData.phys = phys
+	self.LAST_REQUESTED_MESH = table_copy(requestData)
+	self:LoadOBJ(requestData.uri, requestData.isAdmin, function(meshData)
+		meshData.scale = requestData.scale
+		meshData.phys = requestData.phys
 		
 		self:SetStatus("Done")
 		self:BuildMeshes(meshData)
@@ -136,7 +131,7 @@ function ENT:RetryModelParse()
 	if not lastMesh then return end
 	
 	QUBELib.Obj.UnRegister(lastMesh.uri) -- Uncache it
-	self:LocalLoadMesh(lastMesh.uri, lastMesh.scale, lastMesh.phys)
+	self:LocalLoadMesh(lastMesh)
 end
 --- MESH ---
 ------------

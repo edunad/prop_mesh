@@ -250,7 +250,7 @@ QUBELib.Obj.CalculateFaces = function(faceLines, globalMesh)
 	return triangleList
 end
 
-QUBELib.Obj.Parse = function(plyRequester, body, fixNormals)
+QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 	local coroutine_yield = coroutine.running() and coroutine.yield or function () end
 	local fixNormals = (fixNormals ~= nil and fixNormals or true)
 	local rawData = string_split(body, "\n")
@@ -321,7 +321,7 @@ QUBELib.Obj.Parse = function(plyRequester, body, fixNormals)
 			elseif mode == "o" then
 				local name = tostring(data[2]) or ("obj_" .. #subMeshes)
 				
-				if #subMeshes < QUBELib.Obj.MAX_SUBMESHES or plyRequester:IsAdmin() then
+				if #subMeshes < QUBELib.Obj.MAX_SUBMESHES or isAdmin then
 					table_insert(subMeshes, QUBELib.Obj.NewSubMesh(name))
 				end
 			end
@@ -349,7 +349,7 @@ QUBELib.Obj.Parse = function(plyRequester, body, fixNormals)
 		
 		local parsedSubMeshes = {}
 		for _, objMesh in pairs(subMeshes) do
-			if not plyRequester:IsAdmin() then
+			if not isAdmin then
 				if objMesh.positionsCount <= 0 or objMesh.positionsCount > QUBELib.Obj.MAX_SAFE_VERTICES then
 					continue
 				end
