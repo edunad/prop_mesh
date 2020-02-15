@@ -26,7 +26,14 @@ ENT.DEFAULT_MATERIAL_PHYS = CreateMaterial( "QUBE_DEFAULT_MATERIAL_PHYS", "Unlit
 ENT.DEFAULT_MATERIAL:SetVector("$color2", Vector(0, 0, 0))
 ENT.DEFAULT_MATERIAL_PHYS:SetVector("$color2", Vector(1, 1, 1))
 
-ENT.DEBUG_MATERIAL = Material("models/wireframe")
+ENT.DEBUG_MATERIAL = CreateMaterial( "QUBE_DEFAULT_MATERIAL_WIREFRAME", "Wireframe", {
+	["$basetexture"] = "models/wireframe",
+	["$model"] = "1",
+	["$vertexalpha"] = "1",
+	["$vertexcolor"] = "1",
+	["$decal"] = "1"
+})
+
 ENT.DEBUG_MATERIALS_COLORS = {
 	{0.90, 0.29, 0.23},
 	{0.16, 0.50, 0.72},
@@ -47,6 +54,7 @@ ENT.HISTORY_MESHES = {}
 ----
 
 language.Add( "SBoxLimit_qube_mesh", "You have hit the qube_mesh limit!" )
+
 surface.CreateFont( "QUBE_DEBUGFIXED", {
 	font		= "DebugFixedSmall",
 	size		= ScreenScale(6),
@@ -209,9 +217,7 @@ end
 
 function ENT:DrawDEBUGInfo()
 	local minROBB, maxROBB = self:GetRenderBounds()
-	local renderCenter = self:WorldSpaceCenter()
 	local pos = self:GetPos()
-	local plyPos = LocalPlayer():GetPos()
 	local ang = self:GetAngles()
 	
 	local meshData = self.LOADED_MESH

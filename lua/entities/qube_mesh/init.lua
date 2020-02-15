@@ -1,5 +1,6 @@
 local string_trim = string.Trim
 local string_find = string.find
+local string_replace = string.Replace
 
 AddCSLuaFile( "cl_init.lua" ) -- Make sure clientside
 AddCSLuaFile( "shared.lua" )  -- and shared scripts are sent.

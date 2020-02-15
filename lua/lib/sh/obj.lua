@@ -15,7 +15,7 @@ QUBELib = QUBELib or {}
 QUBELib.Obj = QUBELib.Obj or {}
 QUBELib.Obj.Cache = QUBELib.Obj.Cache or {}
 QUBELib.Obj.MAX_SUBMESHES = 5
-QUBELib.Obj.MAX_SAFE_VERTICES = 5000
+QUBELib.Obj.MAX_SAFE_VERTICES = 6000
 
 QUBELib.Obj.IsCached = function(uri)
 	local cache = QUBELib.Obj.Cache[uri]
