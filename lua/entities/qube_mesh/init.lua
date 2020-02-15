@@ -53,19 +53,14 @@ function ENT:SendLoadedMesh(ply)
 	
 	-- SEND TEXTURES AND MESH --
 	self:SendTextures(self.MATERIAL_URLS, ply)
-	self:SendLoadMesh(lastMesh.uri, lastMesh.scale, lastMesh.phys, ply)
+	self:SendLoadMesh(lastMesh, ply)
 end
 
-function ENT:SendLoadMesh(uri, scale, phys, isAdmin, ply)
+function ENT:SendLoadMesh(data, ply)
 	net.Start("qube_mesh_command")
 		net.WriteInt(self:EntIndex(), 32)
 		net.WriteString("MESH_LOAD")
-		net.WriteTable({
-			isAdmin = isAdmin,
-			uri = uri,
-			scale = scale,
-			phys = phys
-		})
+		net.WriteTable(data)
 	if ply then
 		net.Send(ply)	
 	else 
@@ -137,6 +132,8 @@ function ENT:Load(uri, textures, scale, phys)
 		owner = self:CPPIGetOwner()
 	end
 	
+	local isAdmin = owner:IsAdmin()
+	
 	-- FIX INPUT ---
 	scale = QUBELib.Util.ClampVector(scale or Vector(), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
 	phys = QUBELib.Util.ClampVector(phys or Vector(), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
@@ -159,11 +156,11 @@ function ENT:Load(uri, textures, scale, phys)
 	
 	self:SetTextures(textures)
 	
-	self.LAST_REQUESTED_MESH = {uri = uri, scale = scale, phys = phys}
-	self:SendLoadMesh(uri, scale, phys) -- Start client load
+	self.LAST_REQUESTED_MESH = {uri = uri, scale = scale, phys = phys, isAdmin = isAdmin}
+	self:SendLoadMesh(self.LAST_REQUESTED_MESH) -- Start client load
 	
 	-- Server load --
-	self:LoadOBJ(uri, owner:IsAdmin(), function(meshData)
+	self:LoadOBJ(uri, isAdmin, function(meshData)
 		meshData.scale = scale
 		meshData.phys = phys
 		

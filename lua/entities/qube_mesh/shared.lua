@@ -261,7 +261,7 @@ function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 					return QUBELib.MeshParser.QueueDone()
 				end
 				
-				if not isAdmin then -- I don't trust admins xD
+				if not isAdmin then
 					if fileSize > self.MAX_OBJ_SIZE_BYTES then
 						self:SetStatus("!! Model too big !!")
 						return QUBELib.MeshParser.QueueDone()
