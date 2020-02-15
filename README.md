@@ -1,4 +1,4 @@
-# [BETA] QUBE - OBJ Prop mesh
+# QUBE - Prop .obj importer
 ![](https://i.imgur.com/PL0FRnq.gif)
 > ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀THE FUN CANNOT BE HALTED
 
