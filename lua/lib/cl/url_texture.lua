@@ -85,10 +85,8 @@ QUBELib.URLMaterial.LoadMaterialURL = function(uri, success, failure)
 					}
 					
 					#image {
-						object-fit: cover;
-						
-						width: auto;
-						height: auto;
+						width: 100%;
+						height: 100%;
 					}
 				</style>
 			</head>
