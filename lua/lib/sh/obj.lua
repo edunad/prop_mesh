@@ -14,8 +14,8 @@ local string_trim = string.Trim
 QUBELib = QUBELib or {}
 QUBELib.Obj = QUBELib.Obj or {}
 QUBELib.Obj.Cache = QUBELib.Obj.Cache or {}
-QUBELib.Obj.MAX_SUBMESHES = 5
-QUBELib.Obj.MAX_SAFE_VERTICES = 6000
+QUBELib.Obj.MAX_SUBMESHES = GetConVar( "qube_maxSubMeshes" )
+QUBELib.Obj.MAX_SAFE_VERTICES = GetConVar( "qube_maxVertices" )
 
 QUBELib.Obj.IsCached = function(uri)
 	local cache = QUBELib.Obj.Cache[uri]
@@ -320,8 +320,9 @@ QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 				subMeshes[#subMeshes].faceLines[#subMeshes[#subMeshes].faceLines + 1] = parts
 			elseif mode == "o" then
 				local name = tostring(data[2]) or ("obj_" .. #subMeshes)
+				local maxSubMeshes = QUBELib.Obj.MAX_SUBMESHES:GetInt()
 				
-				if #subMeshes < QUBELib.Obj.MAX_SUBMESHES or isAdmin then
+				if #subMeshes < maxSubMeshes or isAdmin then
 					table_insert(subMeshes, QUBELib.Obj.NewSubMesh(name))
 				end
 			end
@@ -348,9 +349,11 @@ QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 		end
 		
 		local parsedSubMeshes = {}
+		local maxVertices = QUBELib.Obj.MAX_SAFE_VERTICES:GetInt()
+		
 		for _, objMesh in pairs(subMeshes) do
 			if not isAdmin then
-				if objMesh.positionsCount <= 0 or objMesh.positionsCount > QUBELib.Obj.MAX_SAFE_VERTICES then
+				if objMesh.positionsCount <= 0 or objMesh.positionsCount > maxVertices then
 					continue
 				end
 			end

@@ -3,21 +3,40 @@ if SERVER then return error("[QUBELib]Tried to load 'URLTexture.lua' on SERVER")
 local table_insert = table.insert
 local table_removeByValue = table.RemoveByValue
 local table_remove = table.remove
+local table_count = table.Count
 
 QUBELib = QUBELib or {}
 QUBELib.URLMaterial = QUBELib.URLMaterial or {}
 
-QUBELib.URLMaterial.USE_PROXY = true
-QUBELib.URLMaterial.MAX_TIMEOUT = 20
+QUBELib.URLMaterial.USE_PROXY = CreateClientConVar("qube_urltexture_proxy", 1, true, false, "Use proxy to load textures? (Protects IP) (Default: 1)")
+QUBELib.URLMaterial.MAX_TIMEOUT = CreateClientConVar("qube_urltexture_timeout", 30, true, false, "How many seconds before timing out (Default: 30)")
+QUBELib.URLMaterial.RequestedTextures = QUBELib.URLMaterial.RequestedTextures or {}
 QUBELib.URLMaterial.Materials = QUBELib.URLMaterial.Materials or {}
 QUBELib.URLMaterial.Panels = QUBELib.URLMaterial.Panels or {}
 QUBELib.URLMaterial.Queue = {}
 
 QUBELib.URLMaterial.Clear = function()
-	QUBELib.URLMaterial.Materials = {}	
+	QUBELib.URLMaterial.Materials = {}
+	print("[QUBELib] Cleared all loaded materials")
 end
 
-QUBELib.URLMaterial.LoadMaterialURL = function(uri, success, failure)
+QUBELib.URLMaterial.ReloadTextures = function()
+	QUBELib.URLMaterial.Clear() -- Clear all materials first
+	
+	for uri, ent in pairs(QUBELib.URLMaterial.RequestedTextures) do
+		if not IsValid(ent) then
+			print("[QUBELib] Removed unused texture " .. uri)
+			table_removeByValue(QUBELib.URLMaterial.RequestedTextures, uri)
+			continue
+		end
+		
+		QUBELib.URLMaterial.LoadMaterialURL(ent, uri)
+	end
+	
+	print("[QUBELib] Reloaded " .. tostring(table_count(QUBELib.URLMaterial.RequestedTextures)) .. " textures!")
+end
+
+QUBELib.URLMaterial.LoadMaterialURL = function(ent, uri, success, failure)
 	if uri == "" then return end
 	
 	if QUBELib.URLMaterial.Materials[uri] then 
@@ -52,7 +71,7 @@ QUBELib.URLMaterial.LoadMaterialURL = function(uri, success, failure)
 				table_insert(QUBELib.URLMaterial.Queue, {
 					panel = PANEL,
 					uri = uri,
-					cooldown = CurTime() + QUBELib.URLMaterial.MAX_TIMEOUT,
+					cooldown = CurTime() + QUBELib.URLMaterial.MAX_TIMEOUT:GetInt(),
 					success = success,
 					failure = failure
 				})
@@ -67,7 +86,7 @@ QUBELib.URLMaterial.LoadMaterialURL = function(uri, success, failure)
 	end
 	
 	local imgURL = uri:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub('"', "&quot;")
-	if QUBELib.URLMaterial.USE_PROXY then
+	if QUBELib.URLMaterial.USE_PROXY:GetBool() then
 		imgURL = "https://images.weserv.nl/?url=" .. imgURL
 	end
 	
@@ -116,6 +135,7 @@ QUBELib.URLMaterial.LoadMaterialURL = function(uri, success, failure)
 		</html>
 	]])
 	
+	QUBELib.URLMaterial.RequestedTextures[uri] = ent -- Used on texture reload
 	table_insert(QUBELib.URLMaterial.Panels, PANEL)
 end
 
@@ -176,5 +196,13 @@ hook.Add("Think", "__loadtexture_qube_mesh__", function()
 		end
 	end
 end)
+
+concommand.Add( "qube_urltexture_reload", function()
+	QUBELib.URLMaterial.ReloadTextures()
+end, nil, "Reloads all url textures")
+
+concommand.Add( "qube_urltexture_clear", function()
+	QUBELib.URLMaterial.Clear()
+end, nil, "Clear url texture cache")
 
 QUBELib.URLMaterial.ClearPanels()

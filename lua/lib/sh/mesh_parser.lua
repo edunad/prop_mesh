@@ -42,14 +42,14 @@ QUBELib.MeshParser.QueueThink = function ()
 		-- COROUTINE
 		while SysTime () - t0 < PARSING_THERSOLD do
 			success, finished, statusMessage, meshData = coroutine.resume(QUBELib.MeshParser.CurThread.co)
-			QUBELib.MeshParser.CurThread.onStatusUpdate(statusMessage)
-					
+			
+			if statusMessage then QUBELib.MeshParser.CurThread.onStatusUpdate(statusMessage)end
 			if (not success or finished) then break end
 		end
 		
 		--- CHECK
 		if not success then
-			QUBELib.MeshParser.CurThread.onFailed("!! Failed to parse !!")
+			QUBELib.MeshParser.CurThread.onFailed()
 			return
 		end
 		

@@ -15,13 +15,13 @@ local math_abs = math.abs
 local table_copy = table.Copy
 
 -- Default SETTINGS ---------
-ENT.MAX_SAFE_VOLUME = 580
-ENT.MIN_SAFE_VOLUME = 3
+ENT.MAX_SAFE_VOLUME = GetConVar( "qube_maxScaleVolume" )
+ENT.MIN_SAFE_VOLUME = GetConVar( "qube_minScaleVolume" )
 
 ENT.MIN_SAFE_SCALE = 0.01
 ENT.MAX_SAFE_SCALE = 100
 
-ENT.MAX_OBJ_SIZE_BYTES = 2048576
+ENT.MAX_OBJ_SIZE_BYTES = GetConVar( "qube_maxOBJ_bytes" )
 -----------------------------
 
 --- LOADED MODEL ---
@@ -101,13 +101,15 @@ end
 
 function ENT:VectorToSafe(meshData, scale)
 	local fixedScale = QUBELib.Util.ClampVector(Vector(scale.x, scale.y, scale.z) or Vector(), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
+	local minVol = self.MIN_SAFE_VOLUME:GetInt()
+	local maxVol = self.MAX_SAFE_VOLUME:GetInt()
 	
 	local OBB = self:GetOBBSize(meshData)
 	for i = 1, 3 do
 		local size = OBB[i]
 		local scaler = fixedScale[i]
 		local size_actual = size * scaler
-		local size_clamped = math_clamp_(size_actual, self.MIN_SAFE_VOLUME, self.MAX_SAFE_VOLUME)
+		local size_clamped = math_clamp_(size_actual, minVol, maxVol)
 		local new = size_clamped / size
 		
 		if not QUBELib.Util.IsFinite(new) or math_abs(new) < 0.00000001 then return end
@@ -242,6 +244,7 @@ end
 function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 	local fetchBody = nil
 	local bodySize = nil
+	local maxBytes = self.MAX_OBJ_SIZE_BYTES:GetInt()
 	
 	QUBELib.MeshParser.Register({
 		onInitialize = function(onInitialized)
@@ -261,21 +264,22 @@ function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 			http.Fetch(uri, function(body, len, headers, code)
 				local fileSize = #body
 				local fileType = headers["Content-Type"]
+				local niceSize = QUBELib.Util.NiceSize(fileSize)
 				
 				if (fileType ~= "text/plain" and fileType ~= "application/octet-stream") or not fileSize then
-					self:SetStatus("!! Invalid mesh type !!")
-					return QUBELib.MeshParser.QueueDone()
+					QUBELib.MeshParser.QueueDone()
+					return onFail("!! Invalid model type !!")
 				end
 				
 				if not isAdmin then
-					if fileSize > self.MAX_OBJ_SIZE_BYTES then
-						self:SetStatus("!! Model too big !!")
-						return QUBELib.MeshParser.QueueDone()
+					if fileSize > maxBytes then
+						QUBELib.MeshParser.QueueDone()
+						return onFail("!! Model too big (".. niceSize ..") !!")
 					end
 				end
 				
 				fetchBody = body
-				bodySize = QUBELib.Util.NiceSize(fileSize)
+				bodySize = niceSize
 				
 				return onInitialized()
 			end, function(err)
@@ -296,11 +300,11 @@ function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 			return onSuccess(meshData)
 		end,
 		
-		onFailed = function(err)
+		onFailed = function()
 			QUBELib.MeshParser.QueueDone()
 			
 			if not IsValid(self) then return end
-			return onFail(err)
+			return onFail("!! FAILED: " .. self.LAST_STATUS .. " !!")
 		end,
 		
 		co = coroutine.create(function ()

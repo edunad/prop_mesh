@@ -69,7 +69,7 @@ surface.CreateFont( "QUBE_DEBUGFIXED", {
 function ENT:LoadTextures(textures)
 	for _, v in pairs(textures) do
 		if not v or string_trim(v) == "" then continue end
-		QUBELib.URLMaterial.LoadMaterialURL(v)
+		QUBELib.URLMaterial.LoadMaterialURL(self, v)
 	end
 		
 	self.MATERIALS_URL = textures
@@ -243,7 +243,7 @@ function ENT:DrawDEBUGInfo()
 end
 
 function ENT:DrawLOGO()
-	local pos = self:WorldSpaceCenter() + Vector(0, 0, 4)
+	local pos = self:GetPos() + Vector(0, 0, 4)
 	if self.LAST_STATUS or self.LAST_MODEL_ERRORED then
 		pos = pos + Vector( 0, 0, 4 )
 	end
@@ -268,7 +268,7 @@ function ENT:DrawStatus(pos, ang)
 		render.PushFilterMag(TEXFILTER.POINT)
 		render.PushFilterMin(TEXFILTER.POINT)
 			if self.LAST_STATUS then
-				draw.DrawText(tostring(self.LAST_STATUS), "DebugFixedSmall", 0, 50, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER )
+				draw.DrawText(tostring(self.LAST_STATUS), "DebugFixedSmall", 0, 55, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER )
 			end
 			
 			if self.LAST_MODEL_ERRORED then
@@ -440,7 +440,7 @@ function ENT:CreateMenu()
 		maxMaterials = 20	
 	end
 	
-	local currentMesh = self.LAST_REQUESTED_MESH
+	local currentMesh = table_copy(self.LAST_REQUESTED_MESH)
 	local currentData = {
 		uri = "",
 		textures = {},
