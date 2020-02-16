@@ -165,89 +165,10 @@ if CLIENT then
 	QUBELib.Obj.NewSubMesh = function(name)
 		return {
 			positionsCount = 0,
-			faceLines = {},
+			triangles = {},
 			name = name
 		}
 	end
-end
-
--- Based on PAC
-QUBELib.Obj.CalculateFaces = function(faceLines, globalMesh)
-	local coroutine_yield = coroutine.running() and coroutine.yield or function () end
-	
-	local faceLineCount = #faceLines
-	local inverseFaceLineCount = 1 / faceLineCount
-	local facesMapper = "([0-9]+)/?([0-9]*)/?([0-9]*)"
-	local triangleList = {}
-	local defaultNormal = Vector(0, 0, -1)
-	
-	for i = 1, #faceLines do
-		local parts = faceLines[i]
-		if #parts < 3 then continue end
-		
-		local v1PositionIndex, v1TexCoordIndex, v1NormalIndex = string_match(parts[1], facesMapper)
-		local v3PositionIndex, v3TexCoordIndex, v3NormalIndex = string_match(parts[2], facesMapper)
-
-		v1PositionIndex, v1TexCoordIndex, v1NormalIndex = tonumber(v1PositionIndex), tonumber(v1TexCoordIndex), tonumber(v1NormalIndex)
-		v3PositionIndex, v3TexCoordIndex, v3NormalIndex = tonumber(v3PositionIndex), tonumber(v3TexCoordIndex), tonumber(v3NormalIndex)
-		
-		for i = 3, #parts do
-			local v2PositionIndex, v2TexCoordIndex, v2NormalIndex = string_match(parts[i], facesMapper)
-			v2PositionIndex, v2TexCoordIndex, v2NormalIndex = tonumber(v2PositionIndex), tonumber(v2TexCoordIndex), tonumber(v2NormalIndex)
-
-			local v1 = { pos_index = nil, pos = nil, u = nil, v = nil, normal = nil, userdata = nil }
-			local v2 = { pos_index = nil, pos = nil, u = nil, v = nil, normal = nil, userdata = nil }
-			local v3 = { pos_index = nil, pos = nil, u = nil, v = nil, normal = nil, userdata = nil }
-		
-			v1.pos_index = v1PositionIndex
-			v2.pos_index = v2PositionIndex
-			v3.pos_index = v3PositionIndex
-
-			v1.pos = globalMesh.positions[v1PositionIndex]
-			v2.pos = globalMesh.positions[v2PositionIndex]
-			v3.pos = globalMesh.positions[v3PositionIndex]
-			
-			if #globalMesh.texCoordsU > 0 then
-				v1.u = globalMesh.texCoordsU[v1TexCoordIndex]
-				v2.u = globalMesh.texCoordsU[v2TexCoordIndex]
-				v3.u = globalMesh.texCoordsU[v3TexCoordIndex]
-			else
-				v1.u = 0
-				v2.u = 0
-				v3.u = 0
-			end
-			
-			if #globalMesh.texCoordsV > 0 then
-				v1.v = globalMesh.texCoordsV[v1TexCoordIndex]
-				v2.v = globalMesh.texCoordsV[v2TexCoordIndex]
-				v3.v = globalMesh.texCoordsV[v3TexCoordIndex]
-			else
-				v1.v = 0
-				v2.v = 0
-				v3.v = 0
-			end
-
-			if #globalMesh.normals > 0 then
-				v1.normal = globalMesh.normals[v1NormalIndex]
-				v2.normal = globalMesh.normals[v2NormalIndex]
-				v3.normal = globalMesh.normals[v3NormalIndex]
-			else
-				v1.normal = defaultNormal
-				v2.normal = defaultNormal
-				v3.normal = defaultNormal
-			end
-
-			triangleList[#triangleList + 1] = v1
-			triangleList[#triangleList + 1] = v2
-			triangleList[#triangleList + 1] = v3
-
-			v3PositionIndex, v3TexCoordIndex, v3NormalIndex = v2PositionIndex, v2TexCoordIndex, v2NormalIndex
-		end
-		
-		coroutine_yield(false, "Parsing triangles")
-	end	
-	
-	return triangleList
 end
 
 QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
@@ -259,7 +180,8 @@ QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 	
 	local minOBB = Vector(100000, 100000, 100000)
 	local maxOBB = Vector(-100000, -100000, -100000)
-	
+	local defaultNormal = Vector(0, 0, -1)
+			
 	local subMeshes = {}
 	local globalMesh = {
 		positions = {},
@@ -310,14 +232,18 @@ QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 				
 				globalMesh.normals[#globalMesh.normals + 1] = Vector(nx, ny, nz)
 			elseif mode == "f" then -- FACES
-				local parts = {}
-				local matchLine = string_match(v, "^ *f +(.*)")
-				
-				for part in string_gmatch(matchLine, "[^ ]+") do
-					parts[#parts + 1] = part
+				local currentMesh = subMeshes[#subMeshes]
+				for _, Data in pairs( { data[4], data[3], data[2] } ) do
+					local parts = string_split(Data, "/")
+					
+					table_insert(currentMesh.triangles , {
+						pos = ( parts[1] ~= nil and globalMesh.positions[ tonumber( parts[ 1 ] ) ] or nil ),
+						normal = ( parts[3] ~= nil and globalMesh.normals[ tonumber( parts[ 3 ] ) ] or defaultNormal ), -- Fallback
+						u = ( parts[2] ~= nil and globalMesh.texCoordsU[ tonumber( parts[ 2 ] ) ] or nil ),
+						v = ( parts[2] ~= nil and globalMesh.texCoordsV[ tonumber( parts[ 2 ] ) ] or nil ),
+						pos_index = parts[ 1 ]
+					})
 				end
-				
-				subMeshes[#subMeshes].faceLines[#subMeshes[#subMeshes].faceLines + 1] = parts
 			elseif mode == "o" then
 				local name = tostring(data[2]) or ("obj_" .. #subMeshes)
 				local maxSubMeshes = QUBELib.Obj.MAX_SUBMESHES:GetInt()
@@ -358,7 +284,7 @@ QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 				end
 			end
 			
-			local tris = QUBELib.Obj.CalculateFaces(objMesh.faceLines, globalMesh)
+			local tris = objMesh.triangles
 			if fixNormals then
 				QUBELib.Obj.CalculateNormals(tris)
 				QUBELib.Obj.CalculateTangents(tris)
