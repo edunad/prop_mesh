@@ -421,6 +421,8 @@ function ENT:RebuildHistoryTable(tbl)
 end
 
 function ENT:CreateTextureRow(meshProps, index, value, onChange)
+	if value == "nil" then value = "" end
+	
 	local textureURL = meshProps:CreateRow( "Urls", "Texture_" .. index )
 	textureURL:Setup( "Generic" )
 	textureURL:SetValue( value or "" )
@@ -662,8 +664,8 @@ function ENT:CreateMenu()
 		local data = self.HISTORY_MESHES[key]
 		if not data then return end
 		
-		for i = 1, #data.textures do 
-			textureURL[i]:SetValue(data.textures[i])
+		for i = 1, #textureURL do
+			textureURL[i]:SetValue(data.textures[i] or "")
 		end
 		
 		meshURL:SetValue(data.uri)

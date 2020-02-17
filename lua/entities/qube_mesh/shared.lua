@@ -242,6 +242,35 @@ end
 
 -------------
 ---  OBJ  ---
+function ENT:CheckOBJUri(uri, onComplete)
+	HTTP({
+		url = uri,
+		method = "HEAD",
+		headers = {
+			["Range"] = "bytes=0-"
+		},
+		success = function(body, len, headers, code)
+			if not headers then return onComplete() end
+			
+			local fileSize = headers["Content-Length"] or headers["content-length"]
+			if not fileSize then return onComplete() end
+			
+			local fileType = headers["Content-Type"]
+			if not fileType or (fileType ~= "text/plain" and fileType ~= "application/octet-stream") then
+				return onComplete()
+			end
+			
+			return onComplete({
+				fileSize = tonumber(fileSize),
+				fileType = fileType
+			})
+		end,
+		failed = function(err)
+			return onComplete()
+		end
+	})
+end
+
 function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 	local fetchBody = nil
 	local bodySize = nil
@@ -261,31 +290,31 @@ function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 				return QUBELib.MeshParser.QueueDone()
 			end
 			
-			self:SetStatus("Fetching model")
-			http.Fetch(uri, function(body, len, headers, code)
-				local fileSize = #body
-				local fileType = headers["Content-Type"]
-				local niceSize = QUBELib.Util.NiceSize(fileSize)
-				
-				if (fileType ~= "text/plain" and fileType ~= "application/octet-stream") or not fileSize then
+			self:SetStatus("Pre-fetching model")
+			self:CheckOBJUri(uri, function(data)
+				if not data then 
 					QUBELib.MeshParser.QueueDone()
-					return onFail("!! Invalid model type !!")
+					return onFail("!! Invalid model url !!")
 				end
 				
+				local niceSize = QUBELib.Util.NiceSize(data.fileSize)
 				if not isAdmin then
-					if fileSize > maxBytes then
+					if data.fileSize > maxBytes then
 						QUBELib.MeshParser.QueueDone()
 						return onFail("!! Model too big (".. niceSize ..") !!")
 					end
 				end
 				
-				fetchBody = body
-				bodySize = niceSize
-				
-				return onInitialized()
-			end, function(err)
-				QUBELib.MeshParser.QueueDone()
-				return onFail("!! Invalid url !!")
+				self:SetStatus("Fetching model")
+				http.Fetch(uri, function(body, len, headers, code)
+					fetchBody = body
+					bodySize = niceSize
+					
+					return onInitialized()
+				end, function(err)
+					QUBELib.MeshParser.QueueDone()
+					return onFail("!! Invalid url !!")
+				end)
 			end)
 		end,
 	
