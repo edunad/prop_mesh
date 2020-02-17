@@ -7,8 +7,8 @@ Supports multi-textured models!
 
 ## NOTES
 - Only .obj models are supported!
-- When using QUBE make sure you at least have a [b]Prop Protection ADDON[/b] (else it will use SetOwner to determine the owner, preventing you from grabbing it!)
-- If you want to use it [b]SINGLEPLAYER[/b], make sure "Local Server" is ticked! Do not start it PURE SINGLEPLAYER
+- When using QUBE make sure you at least have a **Prop Protection ADDON** (else it will use SetOwner to determine the owner, preventing you from grabbing it!)
+- If you want to use it **SINGLEPLAYER**, make sure "Local Server" is ticked! **DO NOT START IT IN PURE SINGLEPLAYER**
 
 ## COMMANDS
 ```
@@ -34,8 +34,8 @@ SERVER :
 ## KNOWN ISSUES
 
 - When props / thrusters / etc are "welded" to QUBE, on Adv.Duplicator / Duplicator, it will loose the original constraints
-- If your model looks "weird" try converting the faces to tris (if you use blender, when exporting the obj, tick "Triangulate Faces"
-- Textures might fail if not on GMOD BRANCH "x64-x86", since chromium has not been merged yet.
+- If your model looks **"weird"** try converting the faces to tris (if you use blender, when exporting the obj, tick **"Triangulate Faces"**
+**- Textures might fail if not on GMOD BRANCH "x64-x86", since chromium has not been merged yet.**
 
 
 ## TODO
