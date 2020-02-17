@@ -1,3 +1,5 @@
+if SERVER then return error("[QUBELib]Tried to load 'queue_sys.lua' on SERVER") end
+
 local table_insert = table.insert
 local table_remove = table.remove
 
@@ -5,7 +7,7 @@ QUBELib = QUBELib or {}
 QUBELib.QueueSYS = QUBELib.QueueSYS or {}
 QUBELib.QueueSYS.Queue = {}
 QUBELib.QueueSYS.IsParsing = false
-QUBELib.QueueSYS.ParseTime = 0.25
+QUBELib.QueueSYS.ParseTime = CreateClientConVar("qube_queue_interval", 0.35, true, false, "How many seconds between qube mesh rendering (LOW VALUE = More chances of crashing) (Default: 0.35)", 0.35, 1)
 
 QUBELib.QueueSYS.Register = function(queueItem)
 	table_insert(QUBELib.QueueSYS.Queue, queueItem)
@@ -25,7 +27,7 @@ QUBELib.QueueSYS.QueueThink = function(queueItem)
 	local callbackData = table_remove(QUBELib.QueueSYS.Queue, 1)
 	callbackData.callback()
 	
-	timer.Simple(QUBELib.QueueSYS.ParseTime, function()
+	timer.Simple(QUBELib.QueueSYS.ParseTime:GetFloat(), function()
 		QUBELib.QueueSYS.QueueThink()	
 	end)
 end
