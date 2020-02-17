@@ -1,5 +1,3 @@
-CreateConVar('sbox_maxqube_mesh', 10)
-
 util.AddNetworkString("qube_mesh_command" )
 util.AddNetworkString("qube_mesh_lib" )
 

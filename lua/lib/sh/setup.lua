@@ -2,6 +2,8 @@
 cleanup.Register("qube_mesh")
 
 -- QUBE CONVARS --
+CreateConVar( "sbox_maxqube_mesh", 10, {FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY}, "Max QUBE entities allowed (Default: 10)" )
+
 CreateConVar( "qube_maxVertices", 6000, {FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY}, "Max QUBE Obj vertices allowed in TOTAL (Default: 10)" )
 CreateConVar( "qube_maxSubMeshes", 5, {FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY}, "Max QUBE sub-meshes allowed (HIGH VALUE = More rendering lag) (Default: 5)" )
 CreateConVar( "qube_maxOBJ_bytes", 2048576, {FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY}, "Max QUBE obj size in BYTES (Default: 2048576)" )

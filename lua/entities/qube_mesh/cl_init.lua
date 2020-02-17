@@ -440,7 +440,7 @@ function ENT:CreateMenu()
 	self:LoadHistory()
 	-----
 	
-	local maxMaterials = QUBELib.Obj.MAX_SUBMESHES
+	local maxMaterials = QUBELib.Obj.MAX_SUBMESHES:GetInt()
 	if LocalPlayer():IsAdmin() then
 		maxMaterials = 20	
 	end

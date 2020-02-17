@@ -29,7 +29,7 @@ local function MakeQUBEEnt(ply, data)
 	ent:Spawn()
 	ent:Activate()
 	
-	if IsValid(pl) then
+	if IsValid(ply) then
 		ply:AddCount("qube_mesh", ent)
 		ply:AddCleanup("qube_mesh", ent)
 	end
