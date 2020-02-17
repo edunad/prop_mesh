@@ -664,8 +664,12 @@ function ENT:CreateMenu()
 		local data = self.HISTORY_MESHES[key]
 		if not data then return end
 		
-		for i = 1, #textureURL do
-			textureURL[i]:SetValue(data.textures[i] or "")
+		for i = 1, #data.textures do
+			if not textureURL[i] then
+				textureURL[i]:SetValue("")
+			else
+				textureURL[i]:SetValue(data.textures[i])
+			end
 		end
 		
 		meshURL:SetValue(data.uri)

@@ -8,6 +8,7 @@
 		".git*",
 		".gitignore",
 		"*.jpg",
+		"*.psd",
 		"LICENSE",
 		"README.md"
 	]
