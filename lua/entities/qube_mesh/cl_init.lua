@@ -284,6 +284,9 @@ function ENT:DrawModelMeshes(DebugMode)
 	if not self.MESH_MODELS or #self.MESH_MODELS <= 0 then return end
 	if not IsValid(self) then return end
 	
+	local Fullbright = self.GetFullbright and self:GetFullbright()
+	if Fullbright then render.SuppressEngineLighting( true ) end
+	
 	self:DrawModel() -- Draw first mesh
 		
 	if #self.MESH_MODELS > 1 then
@@ -312,6 +315,8 @@ function ENT:DrawModelMeshes(DebugMode)
 			end
 		cam.PopModelMatrix()
 	end
+	
+	if Fullbright then render.SuppressEngineLighting( false ) end
 end
 
 function ENT:GetRenderMesh()
@@ -527,6 +532,25 @@ function ENT:CreateMenu()
 	meshDebug.DataChanged = function( _, val )
 		net.Start("qube_mesh_command")
 			net.WriteString("SET_DEBUG")
+			net.WriteEntity(self)
+			net.WriteBool((val == 1))
+		net.SendToServer()
+	end
+	-----
+	
+	-------
+	local meshFullbright = meshProps:CreateRow( "Settings", "Fullbright" )
+	meshFullbright:Setup( "Boolean" )
+	
+	if self.GetFullbright then 
+		meshFullbright:SetValue(self:GetFullbright())
+	else
+		meshFullbright:SetValue(false)
+	end
+	
+	meshFullbright.DataChanged = function( _, val )
+		net.Start("qube_mesh_command")
+			net.WriteString("SET_FULLBRIGHT")
 			net.WriteEntity(self)
 			net.WriteBool((val == 1))
 		net.SendToServer()

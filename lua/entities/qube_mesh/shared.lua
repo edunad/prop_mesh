@@ -64,6 +64,7 @@ end
 
 function ENT:SetupDataTables()
 	self:NetworkVar( "Bool", 0, "Debug" )
+	self:NetworkVar( "Bool", 1, "Fullbright" )
 end
 
 function ENT:OnRemove()

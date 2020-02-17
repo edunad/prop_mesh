@@ -35,6 +35,9 @@ net.Receive("qube_mesh_command", function( len, ply )
 	if command == "SET_DEBUG" then
 		if not ent.SetDebug then return end
 		ent:SetDebug(net.ReadBool())
+	elseif command == "SET_FULLBRIGHT" then
+		if not ent.SetFullbright then return end
+		ent:SetFullbright(net.ReadBool())
 	elseif command == "UPDATE_MESH" then
 		local newData = net.ReadTable()
 		if not newData then return end
