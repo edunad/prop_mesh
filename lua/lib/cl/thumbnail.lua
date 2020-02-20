@@ -72,13 +72,28 @@ QUBELib.Thumbnail.ScreenshotDrawHook = function(data)
 					data.ent:Draw()
 				render.SuppressEngineLighting( false )
 				
+				local startX = (ScrW() - 1024) / 2
+				local endX = 1024
+				if startX <= 0 then
+					endX = ScrW()
+					startX = 0
+				end
+				
+				
+				local startY = (ScrH() - 1024) / 2
+				local endY = 1024
+				if startY <= 0 then
+					endY = ScrH()
+					startY = 0
+				end
+				
 				thumbnailData = render.Capture({ 
 					format = "jpeg", 
 					quality = 70, 
-					x = 0, 
-					y = 0, 
-					h = ScrH(), 
-					w = ScrW() 
+					x = startX,
+					y = startY,
+					h = endY, 
+					w = endX 
 				})
 			cam.End3D()
 		render.PopRenderTarget()
