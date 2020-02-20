@@ -9,6 +9,7 @@ if SERVER then
 	AddCSLuaFile("lib/cl/pvs_cache.lua")
 	AddCSLuaFile("lib/cl/url_texture.lua")
 	AddCSLuaFile("lib/cl/queue_sys.lua")
+	AddCSLuaFile("lib/cl/thumbnail.lua")
 	
 	-- Shared --
 	AddCSLuaFile("lib/sh/setup.lua")
@@ -28,10 +29,18 @@ end
 
 -- CLIENT --
 if CLIENT then
+	-- Folder structure
+	file.CreateDir( "qube_mesh" )
+	file.CreateDir( "qube_mesh/thumbnails" )
+	file.CreateDir( "qube_mesh/models" )
+	file.CreateDir( "qube_mesh/textures" )
+	---
+	
 	include("lib/cl/setup.lua")
 	include("lib/cl/pvs_cache.lua")
 	include("lib/cl/url_texture.lua")
 	include("lib/cl/queue_sys.lua")
+	include("lib/cl/thumbnail.lua")
 end
 
 -- SHARED --
