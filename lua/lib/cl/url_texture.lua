@@ -60,10 +60,8 @@ QUBELib.URLMaterial.LoadMaterialURL = function(ent, uri, success, failure)
 	PANEL:SetPos(0, 0)
 	
 	PANEL.ConsoleMessage = function(panel, data)
-		print(data)
 		if not data or string_trim(data) == "" then return end
-		
-		/*if string_find(data, "DATA:") then
+		if string_find(data, "DATA:") then
 			data = data:gsub("DATA:","")
 			
 			local args = string_split(data, ",")
@@ -91,7 +89,7 @@ QUBELib.URLMaterial.LoadMaterialURL = function(ent, uri, success, failure)
 			end)
 		else
 			return onFail(data)
-		end*/
+		end
 	end
 	
 	local imgURL = uri:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub('"', "&quot;")
@@ -119,8 +117,17 @@ QUBELib.URLMaterial.LoadMaterialURL = function(ent, uri, success, failure)
 				</style>
 			</head>
 			<body>
-			
-				<img id='image' onLoad='console.log('test');' src=']].. imgURL ..[['/>
+				<script>
+					function onImageLoad() {
+						var image = document.getElementById("image");
+						if(image.width > 2816 && image.height > 1704) {
+							console.log("Image too big! ( Max : 2816x1704 )");
+						} else {
+							console.log("DATA:" + image.width + "," + image.height);
+						}
+					};
+				</script>
+				<img id='image' onAbort='console.log('Failed to load Image');' onError='console.log('Failed to load Image');' onLoad='onImageLoad();' src=']].. imgURL ..[['/>
 			</body>
 		</html>
 	]])

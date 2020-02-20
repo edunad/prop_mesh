@@ -55,7 +55,6 @@ QUBELib.Thumbnail.DeleteThumbnail = function(name)
 end
 
 QUBELib.Thumbnail.RemoveHook = function()
-	hook.Remove("HUDPaintBackground", "__qube_mesh_screenshots__")
 	hook.Remove("PostDrawViewModel", "__qube_mesh_screenshot__")
 end
 
@@ -67,7 +66,7 @@ QUBELib.Thumbnail.ScreenshotDrawHook = function(data)
 		local thumbnailData = nil
 		render.PushRenderTarget( QUBELib.Thumbnail.RTTexture )
 			cam.Start3D( data.origin, data.angles, data.fov )
-				render.Clear( 255, 255, 255, 255, true )
+				render.Clear( 35, 35, 35, 255, true )
 				
 				render.SuppressEngineLighting( true )
 					data.ent:Draw()
@@ -76,10 +75,10 @@ QUBELib.Thumbnail.ScreenshotDrawHook = function(data)
 				thumbnailData = render.Capture({ 
 					format = "jpeg", 
 					quality = 70, 
-					x = (ScrW() - 1024) / 2, 
-					y = (ScrH() - 1024) / 2, 
-					h = 1024, 
-					w = 1024 
+					x = 0, 
+					y = 0, 
+					h = ScrH(), 
+					w = ScrW() 
 				})
 			cam.End3D()
 		render.PopRenderTarget()
