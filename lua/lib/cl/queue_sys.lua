@@ -6,7 +6,7 @@ local table_remove = table.remove
 QUBELib = QUBELib or {}
 QUBELib.QueueSYS = QUBELib.QueueSYS or {}
 QUBELib.QueueSYS.Queue = {}
-QUBELib.QueueSYS.ParseTime = CreateClientConVar("qube_queue_interval", 0.35, true, false, "How many seconds between qube mesh rendering (LOW VALUE = More chances of crashing) (Default: 0.35)", 0.35, 1)
+QUBELib.QueueSYS.ParseTime = CreateClientConVar("qube_queue_interval", 0.35, true, false, "How many seconds between qube mesh rendering (LOW VALUE = More chances of crashing) (Default: 0.35)", 0.30, 1)
 
 QUBELib.QueueSYS.Register = function(queueItem)
 	table_insert(QUBELib.QueueSYS.Queue, queueItem)
@@ -22,7 +22,11 @@ QUBELib.QueueSYS.Initialize = function()
 	end)
 end
 
+cvars.RemoveChangeCallback("qube_queue_interval", "__qube_mesh_queuesys__" )
 cvars.AddChangeCallback("qube_queue_interval", function()
 	print("[QUBELib] 'qube_queue_interval' value changed, restarting queue")
 	QUBELib.QueueSYS.Initialize()
 end, "__qube_mesh_queuesys__" )
+
+-- Start queue --
+QUBELib.QueueSYS.Initialize()
