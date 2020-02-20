@@ -26,7 +26,7 @@ ENT.MAX_OBJ_SIZE_BYTES = GetConVar( "qube_maxOBJ_bytes" )
 
 --- LOADED MODEL ---
 ENT.LOADED_MESH = nil
-ENT.LAST_REQUESTED_MESH = nil
+ENT.LAST_REQUESTED_MESH = {}
 
 ENT.LAST_MODEL_ERRORED = false
 ENT.MATERIAL_URLS = {}
@@ -83,6 +83,8 @@ function ENT:OnRemove()
 	else
 		QUBELib.Registry.UnRegisterQube(self)
 	end
+	
+	QUBELib.MeshParser.UnRegister(self)
 end
 --- GENERAL ----
 ----------------
@@ -204,6 +206,7 @@ end
 function ENT:SetScale(scale)
 	if not self.LOADED_MESH then return end
 	self.LOADED_MESH.scale = scale
+	self.LAST_REQUESTED_MESH.scale = scale
 	
 	if SERVER then
 		self.SAVE_DATA.scale = scale -- Update scale and save it
@@ -222,6 +225,7 @@ end
 function ENT:SetPhysScale(phys)
 	if not self.LOADED_MESH then return end
 	self.LOADED_MESH.phys = phys
+	self.LAST_REQUESTED_MESH.phys = phys
 	
 	-- Rebuild collisions
 	self:BuildPhysics( self.LOADED_MESH )
@@ -276,7 +280,7 @@ function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 	local bodySize = nil
 	local maxBytes = self.MAX_OBJ_SIZE_BYTES:GetInt()
 	
-	QUBELib.MeshParser.Register({
+	QUBELib.MeshParser.Register(self, {
 		onInitialize = function(onInitialized)
 			-- Entity died
 			if not IsValid(self) then

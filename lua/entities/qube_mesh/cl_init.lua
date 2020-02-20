@@ -47,10 +47,13 @@ ENT.DEBUG_MATERIALS_COLORS = {
 ENT.MESH_MODELS = {}
 
 ENT.CLIENT_PHYSICS_BOX = nil
-ENT.PANEL = nil
+ENT.UI = {}
 
 ENT.HISTORY_MESHES = {}
 
+---- INTERNAL CHECKS ----
+ENT.__LOADED_MESH__ = false
+ENT.__LOADED_TEXTURES__ = false
 ----
 
 language.Add( "SBoxLimit_qube_mesh", "You have hit the qube_mesh limit!" )
@@ -67,12 +70,29 @@ surface.CreateFont( "QUBE_DEBUGFIXED", {
 ---------------
 --- GENERAL ---
 function ENT:LoadTextures(textures)
+	self.MATERIALS_URL = {}
+	self.__LOADED_TEXTURES__ = false
+	
+	local totalTextures = #textures
+	local onDone = function()
+		totalTextures = totalTextures - 1
+		
+		if totalTextures <= 0 then
+			self.__LOADED_TEXTURES__ = true
+			self:CheckMeshCompletion()
+		end
+	end
+	
 	for _, v in pairs(textures) do
 		if not v or string_trim(v) == "" then continue end
-		QUBELib.URLMaterial.LoadMaterialURL(self, v)
-	end
+		QUBELib.URLMaterial.LoadMaterialURL(self, v, function()
+			return onDone()
+		end, function()
+			return onDone()
+		end)
 		
-	self.MATERIALS_URL = textures
+		table_insert(self.MATERIALS_URL, v)
+	end
 end
 
 function ENT:GenerateExtraRandomColors()
@@ -86,6 +106,8 @@ end
 ------------
 --- MESH ---
 function ENT:BuildIMesh(meshData)
+	self.__LOADED_MESH__ = false
+	
 	-- Prevent crashing players if spammed --
 	QUBELib.QueueSYS.Register({
 		callback = function()
@@ -97,7 +119,6 @@ function ENT:BuildIMesh(meshData)
 			local maxOBB = meshData.maxOBB * safeScale
 			
 			self:SetRenderBounds( minOBB, maxOBB )
-			
 			for _, v in pairs(meshData.subMeshes) do
 				local scaledTris = QUBELib.Obj.GetScaledTris(v, safeScale)
 				local msh = Mesh()
@@ -105,8 +126,26 @@ function ENT:BuildIMesh(meshData)
 				msh:BuildFromTriangles(scaledTris)
 				table_insert(self.MESH_MODELS, msh)
 			end
+			
+			self.__LOADED_MESH__ = true
+			
+			self:UpdateTextureName() -- Fix names
+			self:CheckMeshCompletion()
 		end
 	})
+end
+
+function ENT:CheckMeshCompletion()
+	if not self.__LOADED_MESH__ or not self.__LOADED_TEXTURES__ then return end
+	timer.Simple(0.1, function() self:MeshComplete() end) -- Give it some time to fully render
+end
+
+function ENT:MeshComplete()
+	local owner = self:GetOwner()
+	if self.CPPIGetOwner then owner = self:CPPIGetOwner() end
+	
+	if LocalPlayer() ~= owner then return end
+	self:TakeScreenshot()
 end
 
 function ENT:ClearMeshes()
@@ -120,6 +159,8 @@ function ENT:LocalLoadMesh(requestData)
 	-- ------- --
 	
 	self.LAST_REQUESTED_MESH = table_copy(requestData)
+	self:UpdateMeshSettings()
+	
 	self:LoadOBJ(requestData.uri, requestData.isAdmin, function(meshData)
 		meshData.scale = requestData.scale
 		meshData.phys = requestData.phys
@@ -182,10 +223,12 @@ function ENT:DrawTranslucent()
 end
 
 function ENT:Draw()
-	local DebugMode = self.GetDebug and self:GetDebug()
-	local minOBB, maxOBB = self:GetRenderBounds()
+	local DebugMode = (self.GetDebug and self:GetDebug())
+	if QUBELib.Thumbnail.TakingScreenshot then DebugMode = false end
 	
 	if not self.LOADED_MESH then
+		local minOBB, maxOBB = self:GetRenderBounds()
+		
 		render.MaterialOverride( self.DEFAULT_MATERIAL )
 			self:DrawModel()
 			render.DrawWireframeBox( self:GetPos(), self:GetAngles(), minOBB, maxOBB, Color(255, 255, 255), true)
@@ -288,7 +331,7 @@ function ENT:DrawModelMeshes(DebugMode)
 	if Fullbright then render.SuppressEngineLighting( true ) end
 	
 	self:DrawModel() -- Draw first mesh
-		
+	
 	if #self.MESH_MODELS > 1 then
 		local matrix = Matrix()
 		matrix:SetAngles(self:GetAngles())
@@ -326,14 +369,51 @@ function ENT:GetRenderMesh()
 	if not initialMesh or initialMesh == NULL then return end
 	
 	local DebugMode = self.GetDebug and self:GetDebug()
-	local mat = self:GetModelMaterial(1, DebugMode)
+	if QUBELib.Thumbnail.TakingScreenshot then DebugMode = false end
 	
+	local mat = self:GetModelMaterial(1, DebugMode)
 	if DebugMode then
 		local color = self.DEBUG_MATERIALS_COLORS[1]
 		mat:SetVector("$color2", Vector(color[1], color[2], color[3])) -- Might be a bad idea, but it looks cool
 	end
 	
 	return { Mesh = self.MESH_MODELS[1], Material = mat } -- Render first mesh
+end
+
+
+-- TODO: IMPROVE ANGLE AND POSITIONING --
+function ENT:TakeScreenshot()
+	local loadedMesh = self.LOADED_MESH
+	if not loadedMesh then return end
+	
+	local maxOBB, minOBB = self:GetRenderBounds()
+	local OAngle = self:GetAngles()
+	local OPos = self:GetPos()
+	
+	local size = 0
+	size = math.max( size, math.abs(minOBB.x) + math.abs(maxOBB.x) )
+	size = math.max( size, math.abs(minOBB.y) + math.abs(maxOBB.y) )
+	size = math.max( size, math.abs(minOBB.z) + math.abs(maxOBB.z) )
+	
+	if ( size < 900 ) then
+		size = size * (1 - ( size / 254 ))
+	else
+		size = size * (1 - ( size / 4096 ))
+	end
+	
+	size = math.Clamp( size, 5, 1000 )
+	--
+	local ViewPos, ViewAngle = LocalToWorld(Vector(maxOBB.z - size, (maxOBB.y + minOBB.y) / 2, 0), Angle(0, 0, -90), OPos, OAngle)
+	
+	QUBELib.Thumbnail.TakeThumbnail({
+		ent = self,
+		uri = loadedMesh.uri,
+		origin = ViewPos,
+		angles = ViewAngle
+	})
+	
+	-- Regenerate icons
+	timer.Simple(0.15, function() self:GenerateSpawnIcons() end)
 end
 --- DRAWING ---
 ---------------
@@ -367,11 +447,179 @@ end
 
 --------
 -- UI --
-function ENT:LoadHistory()
-	if file.Exists("qube_mesh/__saved_meshes.json", "DATA") then
-		local rawHistory = file.Read("qube_mesh/__saved_meshes.json")
-		self.HISTORY_MESHES = util.JSONToTable( rawHistory )
+
+function ENT:CreateHelpers(props)
+	--- DEBUG ---
+	local meshDebug = props:CreateRow( "Helpers", "Debug" )
+	meshDebug:Setup( "Boolean" )
+	
+	if self.GetDebug then meshDebug:SetValue(self:GetDebug())
+	else meshDebug:SetValue(false) end
+	
+	meshDebug.DataChanged = function( _, val )
+		net.Start("qube_mesh_command")
+			net.WriteString("SET_DEBUG")
+			net.WriteEntity(self)
+			net.WriteBool((val == 1))
+		net.SendToServer()
 	end
+	----
+	
+	-------
+	local meshFullbright = props:CreateRow( "Helpers", "Fullbright" )
+	meshFullbright:Setup( "Boolean" )
+	
+	if self.GetFullbright then meshFullbright:SetValue(self:GetFullbright())
+	else meshFullbright:SetValue(false) end
+	
+	meshFullbright.DataChanged = function( _, val )
+		net.Start("qube_mesh_command")
+			net.WriteString("SET_FULLBRIGHT")
+			net.WriteEntity(self)
+			net.WriteBool((val == 1))
+		net.SendToServer()
+	end
+	-----
+end
+
+function ENT:CreateMeshMenu()
+	local meshPanel = vgui.Create( "DPanel", self.UI.SHEET )
+	self.UI.SHEET:AddSheet( "Mesh", meshPanel, "icon16/brick_edit.png" )
+	
+	local props = vgui.Create( "DProperties", meshPanel )
+	props:Dock( FILL )
+	
+	-----
+	local meshURL = props:CreateRow( "Urls", "OBJ" )
+	meshURL:Setup( "Generic" )
+	---
+	
+	---- SCALES ---
+	local meshSizeX = props:CreateRow( "Mesh Scale", "Scale X" )
+	meshSizeX:Setup( "Float", { min = self.MIN_SAFE_SCALE, max = self.MAX_SAFE_SCALE } )
+	
+	local meshSizeY = props:CreateRow( "Mesh Scale", "Scale Y" )
+	meshSizeY:Setup( "Float", { min = self.MIN_SAFE_SCALE, max = self.MAX_SAFE_SCALE } )
+	
+	local meshSizeZ = props:CreateRow( "Mesh Scale", "Scale Z" )
+	meshSizeZ:Setup( "Float", { min = self.MIN_SAFE_SCALE, max = self.MAX_SAFE_SCALE } )
+	----
+	
+	---- PHYSICS SCALE ---
+	local meshPhysReset = props:CreateRow( "Physics Scale", "Reset physics to scale" )
+	meshPhysReset:Setup( "Boolean" )
+	meshPhysReset:SetValue( false )
+	
+	local meshPhysX = props:CreateRow( "Physics Scale", "Physics X" )
+	meshPhysX:Setup( "Float", { min = self.MIN_SAFE_SCALE, max = self.MAX_SAFE_SCALE } )
+	
+	local meshPhysY = props:CreateRow( "Physics Scale", "Physics Y" )
+	meshPhysY:Setup( "Float", { min = self.MIN_SAFE_SCALE, max = self.MAX_SAFE_SCALE } )
+	
+	local meshPhysZ = props:CreateRow( "Physics Scale", "Physics Z" )
+	meshPhysZ:Setup( "Float", { min = self.MIN_SAFE_SCALE, max = self.MAX_SAFE_SCALE } )
+	
+	self:CreateHelpers(props)
+	
+	-- Garry pls.
+	local uriElement = meshURL:GetChildren()[2]:GetChildren()[1]:GetChildren()[1]
+	local SXElement = meshSizeX:GetChildren()[2]:GetChildren()[1]:GetChildren()[1]
+	local SYElement = meshSizeY:GetChildren()[2]:GetChildren()[1]:GetChildren()[1]
+	local SZElement = meshSizeZ:GetChildren()[2]:GetChildren()[1]:GetChildren()[1]
+	
+	local PXElement = meshPhysX:GetChildren()[2]:GetChildren()[1]:GetChildren()[1]
+	local PYElement = meshPhysY:GetChildren()[2]:GetChildren()[1]:GetChildren()[1]
+	local PZElement = meshPhysZ:GetChildren()[2]:GetChildren()[1]:GetChildren()[1]
+	----
+	
+	meshPhysReset.DataChanged = function( _, val )
+		if not val then return end
+		meshPhysX:SetValue(SXElement:GetValue())
+		meshPhysY:SetValue(SYElement:GetValue())
+		meshPhysZ:SetValue(SZElement:GetValue())
+		
+		meshPhysReset:SetValue( false )
+		surface.PlaySound( "garrysmod/ui_click.wav" )
+	end
+	----
+	
+	self.UI.MeshElements = {
+		uri = meshURL:GetChildren()[2]:GetChildren()[1]:GetChildren()[1],
+		
+		scale = {SXElement, SYElement, SZElement}, 
+		phys = {PXElement, PYElement, PZElement}
+	}
+	
+	-- Update mesh --
+	self:UpdateMeshSettings()
+end
+
+function ENT:CreateTextureRow(parent, index)
+	local textureURL = parent:CreateRow( "Urls", index )
+	textureURL:Setup( "Generic" )
+	
+	local debugColor = self.DEBUG_MATERIALS_COLORS[index]
+	local labelElement = textureURL.Label
+	labelElement:SetColor(Color(debugColor[1] * 255, debugColor[2] * 255, debugColor[3] * 255))
+
+	textureURL.Paint = function(self, w, h)
+		if ( !IsValid( self.Inner ) ) then return end
+
+		local Skin = self:GetSkin()
+		local editing = self.Inner:IsEditing()
+		local disabled = !self.Inner:IsEnabled() || !self:IsEnabled()
+
+		if ( disabled ) then
+			surface.SetDrawColor( Skin.Colours.Properties.Column_Disabled )
+			surface.DrawRect( w * 0.45, 0, w, h )
+		end
+
+		surface.SetDrawColor( Skin.Colours.Properties.Border )
+		surface.DrawRect( w - 1, 0, 1, h )
+		surface.DrawRect( w * 0.45, 0, 1, h )
+		surface.DrawRect( 0, h - 1, w, 1 )
+		
+		surface.SetDrawColor( Color(1, 1, 1) )
+		surface.DrawRect( 0.1, 0.1, w * 0.45 - 0.1, h - 0.1 )
+	end
+	
+	return {
+		uriText = textureURL:GetChildren()[2]:GetChildren()[1]:GetChildren()[1],
+		rowText = textureURL
+	}
+end
+
+function ENT:CreateTextureMenu()
+	local maxMaterials = QUBELib.Obj.MAX_SUBMESHES:GetInt()
+	if LocalPlayer():IsAdmin() then
+		maxMaterials = 20
+	end
+	
+	local texturePanel = vgui.Create( "DPanel", self.UI.SHEET )
+	self.UI.SHEET:AddSheet( "Textures", texturePanel, "icon16/images.png" )
+	
+	local props = vgui.Create( "DProperties", texturePanel )
+	props:Dock( FILL )
+	
+	self.UI.TextureRows = {}
+	for i = 1, maxMaterials do 
+		table_insert(self.UI.TextureRows, self:CreateTextureRow(props, i))
+	end
+	
+	self:UpdateTextureName()
+end
+
+-----
+function ENT:RemoveHistory(uri)
+	if not self.HISTORY_MESHES or not self.HISTORY_MESHES[uri] then return end
+	self.HISTORY_MESHES[uri] = nil
+	
+	self:SaveHistory()
+end
+
+function ENT:SaveHistory()
+	file.Write( "qube_mesh/__saved_meshes.json", util.TableToJSON( self.HISTORY_MESHES ) )
+	self:GenerateSpawnIcons() -- Re-generate it
 end
 
 function ENT:AddHistory(addData)
@@ -382,329 +630,196 @@ function ENT:AddHistory(addData)
 	self:SaveHistory()
 end
 
-function ENT:RemoveHistory(index)
-	if not self.HISTORY_MESHES then return end
+function ENT:LoadHistory()
+	if not file.Exists("qube_mesh/__saved_meshes.json", "DATA") then return end
 	
-	local key = table.GetKeys(self.HISTORY_MESHES)[index]
-	if not key then return end
-	
-	self.HISTORY_MESHES[key] = nil
-	self:SaveHistory()
+	local rawHistory = file.Read("qube_mesh/__saved_meshes.json")
+	self.HISTORY_MESHES = util.JSONToTable( rawHistory )
 end
 
-function ENT:SaveHistory()
-	file.CreateDir( "qube_mesh" )
-	file.Write( "qube_mesh/__saved_meshes.json", util.TableToJSON( self.HISTORY_MESHES ) )
-end
-
-function ENT:RebuildHistoryTable(tbl)
-	tbl:Clear()
-	
-	if self.HISTORY_MESHES then
-		for _, v in pairs(self.HISTORY_MESHES) do
-			local uriEnd = string_split(v.uri, "/")
-			local textureEnd = ""
-			
-			for k, tex in pairs(v.textures) do
-				if not tex or string_trim(tex) == "" then continue end
-				local texPath = string_split(tex, "/")
-				textureEnd = textureEnd .. texPath[#texPath]
-				
-				if k < #v.textures then
-					textureEnd = textureEnd .. ";"
-				end
-			end
-		
-			tbl:AddLine(uriEnd[#uriEnd], textureEnd)
-		end
-	end
-end
-
-function ENT:CreateTextureRow(meshProps, index, value, onChange)
-	if value == "nil" then value = "" end
-	
-	local textureURL = meshProps:CreateRow( "Urls", "Texture_" .. index )
-	textureURL:Setup( "Generic" )
-	textureURL:SetValue( value or "" )
-	textureURL.DataChanged = function( _, val )
-		onChange(val)
+function ENT:CreateSpawnIcon(uri, panel, iconLayout, onClick, onRightClick)
+	local button = vgui.Create( "DImageButton", iconLayout )
+	button:SetSize( 128, 128 )
+	button:SetTooltip(uri)
+	button:SetImage( "../data/qube_mesh/thumbnails/" .. util.CRC(uri) .. ".jpg" )
+	button.DoClick = function()
+		return onClick(uri)
 	end
 	
-	return textureURL
-end
-
-function ENT:CreateMenu()
-	if self.PANEL then
-		self.PANEL:Remove()	
-	end
-	
-	--- RELOAD HISTORY
-	self:LoadHistory()
-	-----
-	
-	local maxMaterials = QUBELib.Obj.MAX_SUBMESHES:GetInt()
-	if LocalPlayer():IsAdmin() then
-		maxMaterials = 20	
-	end
-	
-	local currentMesh = table_copy(self.LAST_REQUESTED_MESH)
-	local currentData = {
-		uri = "",
-		textures = {},
-		scale = Vector(1, 1, 1),
-		phys = Vector(1, 1, 1)
-	}
-	
-	if currentMesh then
-		currentData.uri = currentMesh.uri
-		currentData.scale = currentMesh.scale
-		currentData.phys = currentMesh.phys
-	end
-	
-	if self.MATERIALS_URL then
-		currentData.textures = table_copy(self.MATERIALS_URL)
-		
-		for i = 1, #currentData.textures do
-			if currentData.textures[i] and currentData.textures[i] ~= "nil" then continue end
-			currentData.textures[i] = ""
-		end
-	end
-	
-	self.PANEL = vgui.Create( "DFrame" )
-	self.PANEL:SetSize( 600, 400 )
-	self.PANEL:SetTitle( "QUBE Menu" )
-	self.PANEL:SetDraggable( true )
-	self.PANEL:MakePopup()
-	self.PANEL:Center()
-	
-	self.PANEL.btnMinim:SetVisible( false )
-	self.PANEL.btnMaxim:SetVisible( false )
-	
-	
-	local sheet = vgui.Create( "DPropertySheet", self.PANEL )
-	sheet:Dock( FILL )
-	
-	
-	local meshPanel = vgui.Create( "DPanel", sheet )
-	sheet:AddSheet( "Mesh", meshPanel, "icon16/brick.png" )
-	
-	local meshHistoryPanel = vgui.Create( "DPanel", sheet )
-	sheet:AddSheet( "History", meshHistoryPanel, "icon16/book_addresses.png" )
-	
-	-----
-	--- HISTORY ---
-	----
-	local MeshHistoryList = vgui.Create( "DListView", meshHistoryPanel )
-	
-	MeshHistoryList:Dock( FILL )
-	MeshHistoryList:SetMultiSelect( false )
-	
-	MeshHistoryList:AddColumn( "OBJ" )
-	MeshHistoryList:AddColumn( "TEXTURE" )
-	
-	self:RebuildHistoryTable(MeshHistoryList)
-	
-	MeshHistoryList.OnRowRightClick = function(panel, line)
+	button.DoRightClick = function()
 		local SubMenu = DermaMenu(true, panel)
 		local deleteBtn = SubMenu:AddOption( "Remove", function()
-			self:RemoveHistory(line)
-			self:RebuildHistoryTable(MeshHistoryList)
+			self:RemoveHistory(uri)
+			button:Remove()
+			return
 		end)
-	
+		
 		deleteBtn:SetIcon( "icon16/delete.png" )
 		SubMenu:Open()
 	end
+end
+
+function ENT:CreateHistoryMenu()
+	self:LoadHistory() -- Load history
 	
-	-----
+	self.UI.HISTORYPANEL = vgui.Create( "DPanel", self.UI.SHEET )
+	self.UI.SHEET:AddSheet( "Saved Meshes", self.UI.HISTORYPANEL, "icon16/book_addresses.png" )
+	
+	local scroll = vgui.Create( "DScrollPanel", self.UI.HISTORYPANEL) -- Create the Scroll panel
+	scroll:Dock( FILL )
+	
+	self.UI.ICONLIST = vgui.Create( "DIconLayout", scroll )
+	self.UI.ICONLIST:Dock( FILL )
+	self.UI.ICONLIST:SetSpaceY( 5 )
+	self.UI.ICONLIST:SetSpaceX( 5 )
+	self.UI.ICONLIST:Layout()
+	
+	self:GenerateSpawnIcons()
+end
+
+----
+
+function ENT:SanitizeTextures(textures)
+	if not textures or #textures <= 0 then return textures end
+	
+	local cleanTextures = {}
+	for _, text in pairs(textures) do
+		if not text or string_trim(text) == "" then continue end
+		table_insert(cleanTextures, text)
+	end
+	
+	return cleanTextures
+end
+
+function ENT:UILoadData(data)
+	surface.PlaySound( "garrysmod/ui_click.wav" )
+	
+	net.Start("qube_mesh_command")
+		net.WriteString("UPDATE_MESH")
+		net.WriteEntity(self)
+		net.WriteTable(data)
+	net.SendToServer()
+end
+
+function ENT:GenerateSpawnIcons()
+	if not self.UI or not IsValid(self.UI.PANEL) or not self.UI.ICONLIST then return end
+	self.UI.ICONLIST:Clear()
+	
+	local onClick = function(clickedURL)
+		local savedData = self.HISTORY_MESHES[clickedURL]
+		if not self.HISTORY_MESHES or not savedData then return end
+		if savedData.textures then
+			savedData.textures = self:SanitizeTextures(savedData.textures)
+		end
+		
+		self:UILoadData(savedData)
+		self:UpdateTextureName(savedData)
+		self:UpdateMeshSettings(savedData)
+	end
+	
+	for _, v in pairs(self.HISTORY_MESHES) do
+		self:CreateSpawnIcon(v.uri, self.UI.HISTORYPANEL, self.UI.ICONLIST, function(clickedURL)
+			return onClick(clickedURL)
+		end)
+	end
+end
+
+function ENT:UpdateMeshSettings(savedData)
+	if not self.UI or not IsValid(self.UI.PANEL) or not self.UI.MeshElements then return end
+	local elements = self.UI.MeshElements
+	local currentData = savedData or table_copy(self.LAST_REQUESTED_MESH)
+	
+	elements.uri:SetValue( currentData.uri or "" )
+	
+	local scale = currentData.scale or Vector(1, 1, 1)
+	elements.scale[1]:SetValue(scale.x)
+	elements.scale[2]:SetValue(scale.y)
+	elements.scale[3]:SetValue(scale.z)
+	
+	local phys = currentData.scale or Vector(1, 1, 1)
+	elements.phys[1]:SetValue(phys.x)
+	elements.phys[2]:SetValue(phys.y)
+	elements.phys[3]:SetValue(phys.z)
+end
+
+function ENT:UpdateTextureName(texturesData)
+	if not self.UI or not IsValid(self.UI.PANEL) or not self.UI.TextureRows then return end
+	
+	local materials = table_copy(self.MATERIALS_URL) or {}
+	if texturesData and texturesData.textures then
+		materials = texturesData.textures
+	end
+	
+	local loadedMesh = self.LOADED_MESH
+	for i = 1, #self.UI.TextureRows do
+		local tRow = self.UI.TextureRows[i]
+		if not tRow or not tRow.rowText or not tRow.rowText.Label then continue end
+		
+		local name = nil
+		if loadedMesh and loadedMesh.subMeshes[i] then
+			name = loadedMesh.subMeshes[i].name
+		end
+		
+		tRow.rowText.Label:SetText(name or "Texture_" .. i)
+		tRow.uriText:SetText(materials[i] or "")
+	end
+end
+
+function ENT:CreateMenu()
+	if self.UI then
+		if IsValid(self.UI.PANEL) then 
+			self.UI.PANEL:Remove()
+		end
+	else
+		self.UI = {}
+	end
+	
+	self.UI.PANEL = vgui.Create( "DFrame" )
+	self.UI.PANEL:SetSize( 568, 400 )
+	self.UI.PANEL:SetTitle( "QUBE - Settings Menu" )
+	self.UI.PANEL:SetDraggable( true )
+	self.UI.PANEL:Center()
+	self.UI.PANEL:MakePopup()
+	
+	self.UI.PANEL.btnMinim:SetVisible( false )
+	self.UI.PANEL.btnMaxim:SetVisible( false )
+	
+	
+	---- SECTIONS ---
+	self.UI.SHEET = vgui.Create( "DPropertySheet", self.UI.PANEL )
+	self.UI.SHEET:Dock( FILL )
+	
 	--- MESH ---
-	----
-	local meshProps = vgui.Create( "DProperties", meshPanel )
-	meshProps:Dock( FILL )
+	self:CreateMeshMenu()
+	--- TEXTURE ---
+	self:CreateTextureMenu()
+	--- HISTORY ---
+	self:CreateHistoryMenu()
+	---------------
 	
-	-------
-	local meshDebug = meshProps:CreateRow( "Settings", "Debug Mode" )
-	meshDebug:Setup( "Boolean" )
-	
-	if self.GetDebug then 
-		meshDebug:SetValue( self:GetDebug())
-	else
-		meshDebug:SetValue(false)
-	end
-	
-	meshDebug.DataChanged = function( _, val )
-		net.Start("qube_mesh_command")
-			net.WriteString("SET_DEBUG")
-			net.WriteEntity(self)
-			net.WriteBool((val == 1))
-		net.SendToServer()
-	end
-	-----
-	
-	-------
-	local meshFullbright = meshProps:CreateRow( "Settings", "Fullbright" )
-	meshFullbright:Setup( "Boolean" )
-	
-	if self.GetFullbright then 
-		meshFullbright:SetValue(self:GetFullbright())
-	else
-		meshFullbright:SetValue(false)
-	end
-	
-	meshFullbright.DataChanged = function( _, val )
-		net.Start("qube_mesh_command")
-			net.WriteString("SET_FULLBRIGHT")
-			net.WriteEntity(self)
-			net.WriteBool((val == 1))
-		net.SendToServer()
-	end
-	-----
-	
-	local meshURL = meshProps:CreateRow( "Urls", "OBJ" )
-	meshURL:Setup( "Generic" )
-	meshURL:SetValue( currentData.uri )
-	meshURL.DataChanged = function( _, val )
-		currentData.uri = val
-	end
-	
-	local textureURL = {}
-	for i = 1, maxMaterials do 
-		table_insert(textureURL, self:CreateTextureRow(meshProps, i, currentData.textures[i], function(val)
-			currentData.textures[i] = val
-		end))
-	end
-	
-	
-	----
-	local meshSizeX = meshProps:CreateRow( "Scale", "Scale X" )
-	meshSizeX:Setup( "Float", { min = self.MIN_SAFE_SCALE, max = self.MAX_SAFE_SCALE } )
-	meshSizeX:SetValue( currentData.scale.x )
-	meshSizeX.DataChanged = function( _, val ) 
-		currentData.scale.x = val
-	end
-	
-	local meshSizeY = meshProps:CreateRow( "Scale", "Scale Y" )
-	meshSizeY:Setup( "Float", { min = self.MIN_SAFE_SCALE, max = self.MAX_SAFE_SCALE } )
-	meshSizeY:SetValue( currentData.scale.y )
-	meshSizeY.DataChanged = function( _, val ) 
-		currentData.scale.y = val
-	end
-	
-	local meshSizeZ = meshProps:CreateRow( "Scale", "Scale Z" )
-	meshSizeZ:Setup( "Float", { min = self.MIN_SAFE_SCALE, max = self.MAX_SAFE_SCALE } )
-	meshSizeZ:SetValue( currentData.scale.z )
-	meshSizeZ.DataChanged = function( _, val ) 
-		currentData.scale.z = val
-	end
-	----
-	
-	----
-	local meshPhysCustom = meshProps:CreateRow( "Physics", "Reset physics to scale" )
-	meshPhysCustom:Setup( "Boolean" )
-	meshPhysCustom:SetValue( false )
-	
-	
-	local meshPhysX = meshProps:CreateRow( "Physics", "Physics X" )
-	meshPhysX:Setup( "Float", { min = self.MIN_SAFE_SCALE, max = self.MAX_SAFE_SCALE } )
-	meshPhysX:SetValue( currentData.phys.x )
-	meshPhysX.DataChanged = function( _, val ) 
-		currentData.phys.x = val
-	end
-	
-	local meshPhysY = meshProps:CreateRow( "Physics", "Physics Y" )
-	meshPhysY:Setup( "Float", { min = self.MIN_SAFE_SCALE, max = self.MAX_SAFE_SCALE } )
-	meshPhysY:SetValue( currentData.phys.y )
-	meshPhysY.DataChanged = function( _, val ) 
-		currentData.phys.y = val
-	end
-	
-	local meshPhysZ = meshProps:CreateRow( "Physics", "Physics Z" )
-	meshPhysZ:Setup( "Float", { min = self.MIN_SAFE_SCALE, max = self.MAX_SAFE_SCALE } )
-	meshPhysZ:SetValue( currentData.phys.z )
-	meshPhysZ.DataChanged = function( _, val ) 
-		currentData.phys.z = val
-	end
-	----
-	
-	meshPhysCustom.DataChanged = function( _, val )
-		if not val then return end
-		
-		meshPhysX:SetValue(currentData.scale.x)
-		currentData.phys.x = currentData.scale.x
-			
-		meshPhysY:SetValue(currentData.scale.y)
-		currentData.phys.y = currentData.scale.y
-			
-		meshPhysZ:SetValue(currentData.scale.z)
-		currentData.phys.z = currentData.scale.z
-		
-		meshPhysCustom:SetValue( false )
-	end
-	
-	---
-	
-	local updateBtn = vgui.Create( "DButton", meshPanel )
+	local updateBtn = vgui.Create( "DButton", self.UI.PANEL )
 	updateBtn:SetText( "Update mesh" )
 	updateBtn:Dock( BOTTOM  )
 	updateBtn.DoClick = function()
-		-- TODO, ADD COOLDOWN
-		self:AddHistory(currentData)
-		self:RebuildHistoryTable(MeshHistoryList)
+		local elements = self.UI.MeshElements
+		if not elements then return end
 		
-		net.Start("qube_mesh_command")
-			net.WriteString("UPDATE_MESH")
-			net.WriteEntity(self)
-			net.WriteTable(currentData)
-		net.SendToServer()
+		local texts = {}
+		for _, v in pairs(self.UI.TextureRows) do
+			if not v or not v.uriText then continue end
+			table_insert(texts, v.uriText:GetValue())
+		end
+		
+		local data = {
+			uri = elements.uri:GetValue(),
+			scale = Vector(elements.scale[1]:GetValue(), elements.scale[2]:GetValue(), elements.scale[3]:GetValue()),
+			phys = Vector(elements.phys[1]:GetValue(), elements.phys[2]:GetValue(), elements.phys[3]:GetValue()),
+			textures = self:SanitizeTextures(texts)
+		}
+		
+		self:AddHistory(data)
+		self:UILoadData(data)
 	end
-	
-	MeshHistoryList.DoDoubleClick = function(panel, line)
-		local key = table.GetKeys(self.HISTORY_MESHES)[line]
-		if not key then return end
-		
-		local data = self.HISTORY_MESHES[key]
-		if not data then return end
-		
-		for i = 1, #data.textures do
-			if not textureURL[i] then
-				textureURL[i]:SetValue("")
-			else
-				textureURL[i]:SetValue(data.textures[i])
-			end
-		end
-		
-		meshURL:SetValue(data.uri)
-		currentData.uri = data.uri
-		
-		if data.scale then
-			meshSizeX:SetValue(data.scale.x)
-			currentData.scale.x = data.scale.x
-			
-			meshSizeY:SetValue(data.scale.y)
-			currentData.scale.y = data.scale.y
-			
-			meshSizeZ:SetValue(data.scale.z)
-			currentData.scale.z = data.scale.z
-		end
-	
-		if data.phys then
-			meshPhysX:SetValue(data.phys.x)
-			currentData.phys.x = data.phys.x
-			
-			meshPhysY:SetValue(data.phys.y)
-			currentData.phys.y = data.phys.y
-			
-			meshPhysZ:SetValue(data.phys.z)
-			currentData.phys.z = data.phys.z
-		end
-	
-		self:EmitSound("buttons/button14.wav")
-		net.Start("qube_mesh_command")
-			net.WriteString("UPDATE_MESH")
-			net.WriteEntity(self)
-			net.WriteTable(data)
-		net.SendToServer()
-	end
-	---
 end
 -- UI --
 --------

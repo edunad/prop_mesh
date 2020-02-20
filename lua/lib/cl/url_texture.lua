@@ -5,10 +5,13 @@ local table_removeByValue = table.RemoveByValue
 local table_remove = table.remove
 local table_count = table.Count
 
+local string_trim = string.Trim
+local string_find = string.find
+local string_split = string.Split
+
 QUBELib = QUBELib or {}
 QUBELib.URLMaterial = QUBELib.URLMaterial or {}
 
-QUBELib.URLMaterial.USE_PROXY = CreateClientConVar("qube_urltexture_proxy", 1, true, false, "Use proxy to load textures? (Protects IP) (Default: 1)")
 QUBELib.URLMaterial.MAX_TIMEOUT = CreateClientConVar("qube_urltexture_timeout", 30, true, false, "How many seconds before timing out (Default: 30)")
 QUBELib.URLMaterial.RequestedTextures = QUBELib.URLMaterial.RequestedTextures or {}
 QUBELib.URLMaterial.Materials = QUBELib.URLMaterial.Materials or {}
@@ -26,7 +29,7 @@ QUBELib.URLMaterial.ReloadTextures = function()
 	for uri, ent in pairs(QUBELib.URLMaterial.RequestedTextures) do
 		if not IsValid(ent) then
 			print("[QUBELib] Removed unused texture " .. uri)
-			table_removeByValue(QUBELib.URLMaterial.RequestedTextures, uri)
+			QUBELib.URLMaterial.RequestedTextures[uri] = nil
 			continue
 		end
 		
@@ -39,29 +42,37 @@ end
 QUBELib.URLMaterial.LoadMaterialURL = function(ent, uri, success, failure)
 	if uri == "" then return end
 	
-	if QUBELib.URLMaterial.Materials[uri] then 
+	if QUBELib.URLMaterial.Materials[uri] then
 		if success then success(QUBELib.URLMaterial.Materials[uri]) end
 		return
 	end
 	
 	local PANEL = vgui.Create("DHTML")
+	local onFail = function(msg)
+		if PANEL then PANEL:Remove() end
+		
+		print("[QUBELib] Texture failed: " ..msg)
+		if failure then failure() end
+	end
+	
 	PANEL:SetAlpha( 0 )
 	PANEL:SetMouseInputEnabled( false )
-	PANEL:NewObjectCallback("imageLoader", "finished")
-	PANEL:NewObjectCallback("imageLoader", "error")
 	PANEL:SetPos(0, 0)
 	
-	PANEL.OnCallback = function(_, objectName, methodName, args)
-		if objectName ~= "imageLoader" then return end
-		
-		if methodName == "finished" then
-			if #args <= 0 then return end
-			if not IsValid(PANEL) then return end
+	PANEL.ConsoleMessage = function(panel, data)
+		if not data or string_trim(data) == "" then return end
+		if string_find(data, "DATA:") then
+			data = data:gsub("DATA:","")
+			
+			local args = string_split(data, ",")
+			if not args or #args <= 0 then
+				return onFail("Invalid texture")
+			end
 			
 			local width  = tonumber(args[1]) or 0
 			local height = tonumber(args[2]) or 0
-				
-			if width <= 0 or height <= 0 then return end
+			
+			if width <= 0 or height <= 0 then return onFail("Invalid texture") end
 			PANEL:SetSize(width, height)
 			
 			timer.Simple(0.5, function()
@@ -76,19 +87,15 @@ QUBELib.URLMaterial.LoadMaterialURL = function(ent, uri, success, failure)
 					failure = failure
 				})
 			end)
-		elseif methodName == "error" then
-			if #args < 0 then return end
-			PANEL:Remove()
-			
-			if failure then failure() end
-			return
+		else
+			return onFail(data)
 		end
 	end
 	
 	local imgURL = uri:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub('"', "&quot;")
-	if QUBELib.URLMaterial.USE_PROXY:GetBool() then
-		imgURL = "https://images.weserv.nl/?url=" .. imgURL
-	end
+	--if QUBELib.URLMaterial.USE_PROXY:GetBool() then
+	--	imgURL = "https://images.weserv.nl/?url=" .. imgURL
+	--end
 	
 	PANEL:SetHTML([[
 		<html>
@@ -110,30 +117,21 @@ QUBELib.URLMaterial.LoadMaterialURL = function(ent, uri, success, failure)
 				</style>
 			</head>
 			<body>
-				<script type="text/javascript">
-					function imageError() {
-						imageLoader.error("Image not found!");
-					};
-					
-					window.onerror = function(message, file, lineNumber) {
-						imageLoader.error(message);
-					};
-					
-					function imageLoaded() {
-						let image = document.getElementById("image");
-						
+				<script>
+					function onImageLoad() {
+						var image = document.getElementById("image");
 						if(image.width > 2816 && image.height > 1704) {
-							imageLoader.error("Image too big! ( Max : 2816x1704 )");
+							console.log("Image too big! ( Max : 2816x1704 )");
 						} else {
-							imageLoader.finished(image.width, image.height);
+							console.log("DATA:" + image.width + "," + image.height);
 						}
 					};
 				</script>
-			
-				<img id="image" src="]].. imgURL ..[[" onerror="imageError()" onload="imageLoaded()" onabort="imageError()" />
+				<img id='image' onAbort='console.log('Failed to load Image');' onError='console.log('Failed to load Image');' onLoad='onImageLoad();' src=']].. imgURL ..[['/>
 			</body>
 		</html>
 	]])
+	
 	
 	QUBELib.URLMaterial.RequestedTextures[uri] = ent -- Used on texture reload
 	table_insert(QUBELib.URLMaterial.Panels, PANEL)
