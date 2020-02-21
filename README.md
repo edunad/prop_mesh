@@ -13,7 +13,6 @@ Supports multi-textured models!
 ## COMMANDS
 ```
 CLIENT :
-	qube_urltexture_proxy <1 or 0>- Use proxy to load textures? (Protects IP) (Default: 1)
 	qube_urltexture_timeout <number> - How many seconds before timing out (Default: 30)
 	-------------
 	qube_queue_interval <0.35 to 1> - How many seconds between qube mesh rendering (LOW VALUE = More chances of crashing) (Default: 0.35)
@@ -35,8 +34,6 @@ SERVER :
 
 - When props / thrusters / etc are "welded" to QUBE, on Adv.Duplicator / Duplicator, it will loose the original constraints
 - If your model looks **"weird"** try converting the faces to tris (if you use blender, when exporting the obj, tick **"Triangulate Faces"**
-**- Textures might fail if not on GMOD BRANCH "x64-x86", since chromium has not been merged yet.**
-
 
 ## TODO
 ### Mesh
@@ -49,7 +46,7 @@ SERVER :
 - [x] Add console commands to limit QUBE on client side
 - [x] Add console commands server side for admins
 - [ ] Handle server failing to parse model?
-- [ ] Better UI Panel
+- [X] Better UI Panel
 
 ## LINKS
 - Workshop : https://steamcommunity.com/sharedfiles/filedetails/?id=1997179073
