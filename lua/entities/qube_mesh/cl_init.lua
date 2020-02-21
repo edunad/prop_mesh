@@ -736,7 +736,7 @@ function ENT:UpdateMeshSettings(savedData)
 	elements.scale[2]:SetValue(scale.y)
 	elements.scale[3]:SetValue(scale.z)
 	
-	local phys = currentData.scale or Vector(1, 1, 1)
+	local phys = currentData.phys or Vector(1, 1, 1)
 	elements.phys[1]:SetValue(phys.x)
 	elements.phys[2]:SetValue(phys.y)
 	elements.phys[3]:SetValue(phys.z)
