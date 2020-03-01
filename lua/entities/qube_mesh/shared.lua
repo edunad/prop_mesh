@@ -6,7 +6,7 @@ ENT.PrintName		= "QUBE"
 ENT.Author			= "FailCake"
 ENT.RenderGroup 	= RENDERGROUP_TRANSLUCENT
 ENT.AdminOnly		= false
-ENT.Category		= "Editors"
+ENT.Category		= "Custom Models"
 ENT.Contact			= "https://github.com/edunad/qube"
 ENT.Spawnable		= true
 
