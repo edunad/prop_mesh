@@ -1,4 +1,4 @@
-# QUBE - Prop .obj importer
+# QUBE: Custom Model Loader
 ![](https://i.imgur.com/PL0FRnq.gif)
 > ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀THE FUN CANNOT BE HALTED
 
