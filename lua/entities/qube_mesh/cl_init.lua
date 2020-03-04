@@ -162,12 +162,17 @@ function ENT:LocalLoadMesh(requestData)
 	self:UpdateMeshSettings()
 	
 	self:LoadOBJ(requestData.uri, requestData.isAdmin, function(meshData)
+		if not IsValid(self) then return end
+		
 		meshData.scale = requestData.scale
 		meshData.phys = requestData.phys
 		
 		self:SetStatus("Done")
 		self:BuildMeshes(meshData)
 	end, function(err)
+		print("[Qube]"..err)
+		
+		if not IsValid(self) then return end
 		self:SetModelErrored(true)
 		self:SetStatus(err)
 	end)
@@ -315,7 +320,7 @@ function ENT:DrawStatus(pos, ang)
 			end
 			
 			if self.LAST_MODEL_ERRORED then
-				draw.DrawText("USE + SHIFT to retry", "DebugFixedSmall", 0, 70, Color( 192, 57, 43, 255 ), TEXT_ALIGN_CENTER )
+				draw.DrawText("SHIFT + USE to retry", "DebugFixedSmall", 0, 70, Color( 192, 57, 43, 255 ), TEXT_ALIGN_CENTER )
 			end
 		render.PopFilterMag()
 		render.PopFilterMin()
