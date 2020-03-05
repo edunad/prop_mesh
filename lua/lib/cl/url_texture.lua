@@ -27,12 +27,7 @@ QUBELib.URLMaterial.ReloadTextures = function()
 	QUBELib.URLMaterial.Clear() -- Clear all materials first
 	
 	for uri, ent in pairs(QUBELib.URLMaterial.RequestedTextures) do
-		if not IsValid(ent) then
-			print("[QUBELib] Removed unused texture " .. uri)
-			QUBELib.URLMaterial.RequestedTextures[uri] = nil
-			continue
-		end
-		
+		if not IsValid(ent) then continue end
 		QUBELib.URLMaterial.LoadMaterialURL(ent, uri)
 	end
 	
@@ -47,11 +42,13 @@ QUBELib.URLMaterial.LoadMaterialURL = function(ent, uri, success, failure)
 		return
 	end
 	
+	local imgURL = uri:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub('"', "&quot;")
 	local PANEL = vgui.Create("DHTML")
 	local onFail = function(msg)
 		if PANEL then PANEL:Remove() end
+		QUBELib.URLMaterial.RequestedTextures[uri] = nil
 		
-		print("[QUBELib] Texture failed: " ..msg)
+		print("[QUBELib] Texture failed: " .. imgURL .. " -> " .. msg)
 		if failure then failure() end
 	end
 	
@@ -75,7 +72,7 @@ QUBELib.URLMaterial.LoadMaterialURL = function(ent, uri, success, failure)
 			if width <= 0 or height <= 0 then return onFail("Invalid texture") end
 			PANEL:SetSize(width, height)
 			
-			timer.Simple(0.5, function()
+			timer.Simple(1, function()
 				PANEL:UpdateHTMLTexture()
 				
 				table_removeByValue(QUBELib.URLMaterial.Panels, PANEL)
@@ -92,11 +89,7 @@ QUBELib.URLMaterial.LoadMaterialURL = function(ent, uri, success, failure)
 		end
 	end
 	
-	local imgURL = uri:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub('"', "&quot;")
-	--if QUBELib.URLMaterial.USE_PROXY:GetBool() then
-	--	imgURL = "https://images.weserv.nl/?url=" .. imgURL
-	--end
-	
+
 	PANEL:SetHTML([[
 		<html>
 			<head>
@@ -127,7 +120,7 @@ QUBELib.URLMaterial.LoadMaterialURL = function(ent, uri, success, failure)
 						}
 					};
 				</script>
-				<img id='image' onAbort='console.log('Failed to load Image');' onError='console.log('Failed to load Image');' onLoad='onImageLoad();' src=']].. imgURL ..[['/>
+				<img id='image' onAbort='console.log('Failed to load Image');' onError='console.log('Failed to load Image');' onLoad='onImageLoad();' src="]].. imgURL ..[["/>
 			</body>
 		</html>
 	]])
