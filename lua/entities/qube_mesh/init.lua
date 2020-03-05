@@ -136,8 +136,8 @@ function ENT:Load(uri, textures, scale, phys)
 	local isAdmin = owner:IsAdmin()
 	
 	-- FIX INPUT ---
-	scale = QUBELib.Util.ClampVector(scale or Vector(), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
-	phys = QUBELib.Util.ClampVector(phys or Vector(), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
+	scale = QUBELib.Util.ClampVector(scale or Vector(1, 1, 1), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
+	phys = QUBELib.Util.ClampVector(phys or Vector(1, 1, 1), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
 	----------
 
 	-- Quick Dropbox fix --

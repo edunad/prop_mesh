@@ -104,7 +104,7 @@ function ENT:GetOBBSize(meshData)
 end
 
 function ENT:VectorToSafe(meshData, scale)
-	local fixedScale = QUBELib.Util.ClampVector(Vector(scale.x, scale.y, scale.z) or Vector(), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
+	local fixedScale = QUBELib.Util.ClampVector(Vector(scale.x, scale.y, scale.z) or Vector(1, 1, 1), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
 	local minVol = self.MIN_SAFE_VOLUME:GetInt()
 	local maxVol = self.MAX_SAFE_VOLUME:GetInt()
 	
@@ -225,6 +225,8 @@ end
 
 function ENT:SetPhysScale(phys)
 	if not self.LOADED_MESH then return end
+	phys = QUBELib.Util.ClampVector(phys or Vector(1, 1, 1), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
+	
 	self.LOADED_MESH.phys = phys
 	self.LAST_REQUESTED_MESH.phys = phys
 	
