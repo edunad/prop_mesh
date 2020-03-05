@@ -9,7 +9,7 @@ local string_gmatch = string.gmatch
 local string_match = string.match
 local string_split = string.Split
 local string_trim = string.Trim
-
+local string_find = string.find
 
 QUBELib = QUBELib or {}
 QUBELib.Obj = QUBELib.Obj or {}
@@ -253,13 +253,15 @@ end
 QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 	local coroutine_yield = coroutine.running() and coroutine.yield or function () end
 	local fixNormals = (fixNormals ~= nil and fixNormals or true)
+	
+	if not body or string_trim(body) == "" then return coroutine_yield(true, "Invalid model") end
+	if not string_find(body, "\no ") then -- Add a default object
+		body = "o default\n" .. body
+	end
+	
 	local rawData = string_split(body, "\n")
-	
-	if not body or string_trim(body) == "" or #rawData <= 0 then return coroutine_yield(true, "Invalid model") end
-	
 	local minOBB = Vector(100000, 100000, 100000)
 	local maxOBB = Vector(-100000, -100000, -100000)
-	local defaultNormal = Vector(0, 0, -1)
 			
 	local subMeshes = {}
 	local globalMesh = {

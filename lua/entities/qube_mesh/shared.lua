@@ -13,6 +13,7 @@ ENT.Spawnable		= true
 local math_clamp_ = math.Clamp
 local math_abs = math.abs
 local table_copy = table.Copy
+local string_find = string.find
 
 -- Default SETTINGS ---------
 ENT.MAX_SAFE_VOLUME = GetConVar( "qube_maxScaleVolume" )
@@ -247,6 +248,8 @@ end
 -------------
 ---  OBJ  ---
 function ENT:CheckOBJUri(uri, onComplete)
+	local allowedTypes = {"text/plain", "application/octet%-stream"}
+	
 	HTTP({
 		url = uri,
 		method = "HEAD",
@@ -260,10 +263,17 @@ function ENT:CheckOBJUri(uri, onComplete)
 			if not fileSize then return onComplete() end
 			
 			local fileType = headers["Content-Type"]
-			if not fileType or (fileType ~= "text/plain" and fileType ~= "application/octet-stream") then
-				return onComplete()
+			if not fileType then return onComplete() end
+			
+			local foundType = false
+			for _, v in pairs(allowedTypes) do
+				if string_find(fileType, v) then
+					foundType = true
+					break
+				end
 			end
 			
+			if not foundType then return onComplete() end
 			return onComplete({
 				fileSize = tonumber(fileSize),
 				fileType = fileType
@@ -336,9 +346,10 @@ function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 		
 		onFailed = function()
 			QUBELib.MeshParser.QueueDone()
-			
 			if not IsValid(self) then return end
-			return onFail("!! FAILED: " .. self.LAST_STATUS .. " !!")
+			
+			local status = self.LAST_STATUS or "UNKNOWN"
+			return onFail("!! FAILED: " .. status .. " !!")
 		end,
 		
 		co = coroutine.create(function ()
