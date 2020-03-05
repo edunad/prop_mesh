@@ -166,6 +166,10 @@ function ENT:BuildPhysics(meshData)
 	local minOBB = meshData.minOBB * safeScale
 	local maxOBB = meshData.maxOBB * safeScale
 	
+	-- Prevent physics crashes --
+	minOBB = Vector(minOBB.x or 1, minOBB.y or 1, minOBB.z or 1)
+	maxOBB = Vector(maxOBB.x or 1, maxOBB.y or 1, maxOBB.z or 1)
+
 	self:CreateOBBPhysics(minOBB, maxOBB)
 end
 
@@ -225,7 +229,6 @@ end
 
 function ENT:SetPhysScale(phys)
 	if not self.LOADED_MESH then return end
-	phys = QUBELib.Util.ClampVector(phys or Vector(1, 1, 1), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
 	
 	self.LOADED_MESH.phys = phys
 	self.LAST_REQUESTED_MESH.phys = phys

@@ -10,6 +10,7 @@ local string_match = string.match
 local string_split = string.Split
 local string_trim = string.Trim
 local string_find = string.find
+local string_explode = string.Explode
 
 QUBELib = QUBELib or {}
 QUBELib.Obj = QUBELib.Obj or {}
@@ -272,13 +273,13 @@ QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 	}
 	
 	for _, v in pairs(rawData) do
-		local data = string_split(v, " ")
+		local data = string_explode("%s+", v, true)
 		local mode = data[1]
 		
 		if mode == "v" then -- POSITION
-			local x = tonumber(data[2]) or 0
-			local y = tonumber(data[3]) or 0
-			local z = tonumber(data[4]) or 0
+			local x = tonumber(data[2]) or 1
+			local y = tonumber(data[3]) or 1
+			local z = tonumber(data[4]) or 1
 			local pos = Vector(x, y, z)
 			
 			-- We don't really care about it on server :<
