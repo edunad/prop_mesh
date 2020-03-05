@@ -109,18 +109,6 @@ function ENT:Use(ply, caller)
 	net.Send(ply)
 end
 
-function ENT:Think()
-	self:EnableCustomCollisions(true) -- Gravity gun likes to mess with it
-	
-	if SERVER then
-		self:NextThink( CurTime() )
-	elseif CLIENT then
-		self:SetNextClientThink( CurTime() )
-	end
-	
-	return true
-end
-
 function ENT:SaveDupeData()
 	if not IsValid(self) or not self.SAVE_DATA then return end
 	duplicator.StoreEntityModifier(self, "SAVE_DATA", self.SAVE_DATA)

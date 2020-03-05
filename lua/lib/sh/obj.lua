@@ -27,9 +27,12 @@ QUBELib.Obj.Clear = function()
 	QUBELib.Obj.Cache = {}
 	
 	if SERVER then
+		print("[QUBELib][Server] Cleared obj model cache, sending to clients")
 		net.Start("qube_mesh_lib")
 			net.WriteString("OBJ_CACHE_CLEANUP")
 		net.Broadcast()
+	else
+		print("[QUBELib] Cleared obj model cache")
 	end
 end
 
@@ -391,3 +394,7 @@ QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 		}
 	end
 end
+
+concommand.Add( "qube_objcache_clear", function()
+	QUBELib.Obj.Clear()
+end, nil, "Clears all cached models")

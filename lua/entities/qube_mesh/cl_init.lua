@@ -45,8 +45,6 @@ ENT.DEBUG_MATERIALS_COLORS = {
 ----------------
 
 ENT.MESH_MODELS = {}
-
-ENT.CLIENT_PHYSICS_BOX = nil
 ENT.UI = {}
 
 ENT.HISTORY_MESHES = {}
@@ -224,10 +222,6 @@ end
 ---------------
 --- DRAWING ---
 function ENT:DrawTranslucent()
-	self:Draw()
-end
-
-function ENT:Draw()
 	local DebugMode = (self.GetDebug and self:GetDebug())
 	if QUBELib.Thumbnail.TakingScreenshot then DebugMode = false end
 	
@@ -422,33 +416,6 @@ function ENT:TakeScreenshot()
 end
 --- DRAWING ---
 ---------------
-
--------------
--- PHYSICS --
-function ENT:TestCollision( startpos, delta, isbox, extents )
-	if not IsValid( self.CLIENT_PHYSICS_BOX ) then
-		return
-	end
-		
-	-- TraceBox expects the trace to begin at the center of the box, but TestCollision is bad
-	local max = extents
-	local min = -extents
-	max.z = max.z - min.z
-	min.z = 0
-
-	local hit, norm, frac = self.CLIENT_PHYSICS_BOX:TraceBox( self:GetPos(), self:GetAngles(), startpos, startpos + delta, min, max )
-	if not hit then
-		return
-	end
-
-	return {
-		HitPos = hit,
-		Normal = norm,
-		Fraction = frac,
-	}
-end
--- PHYSICS --
--------------
 
 --------
 -- UI --

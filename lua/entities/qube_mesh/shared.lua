@@ -35,6 +35,7 @@ ENT.MATERIAL_URLS = {}
 
 --- OTHERS ---
 ENT.LAST_STATUS = nil
+ENT.PHYSICS_BOX = nil
 --------------
 
 ----------------
@@ -53,9 +54,11 @@ function ENT:Initialize()
 	end
 	
 	self:SetModel("models/hunter/blocks/cube05x05x05.mdl")
+	self:PhysicsInitBox( Vector(-12, -12, -12), Vector(12, 12, 12) )
+	self:SetSolid( SOLID_OBB )
+	
+	self:SetRenderMode(RENDERMODE_TRANSTEXTURE)
 	self:SetMoveType( MOVETYPE_VPHYSICS )
-	self:SetRenderMode( RENDERMODE_TRANSALPHA )
-	self:SetSolid( SOLID_VPHYSICS )
 	self:SetUseType( SIMPLE_USE )
 	self:DrawShadow( false )
 	
@@ -77,15 +80,31 @@ function ENT:OnRemove()
 		timer.Simple(0.1, function()
 			if IsValid(self) then return end
 			if self.PANEL then self.PANEL:Remove() end
+				
+			if IsValid( self.PHYSICS_BOX ) then self.PHYSICS_BOX:Destroy() end
 			
 			QUBELib.PVSCache.Remove(entIndex)
 			QUBELib.MeshParser.ClearMeshes(meshes)
+			QUBELib.MeshParser.UnRegister(self)
 		end)
 	else
+		if IsValid( self.PHYSICS_BOX ) then self.PHYSICS_BOX:Destroy() end
+		
 		QUBELib.Registry.UnRegisterQube(self)
+		QUBELib.MeshParser.UnRegister(self)
+	end
+end
+
+function ENT:Think()
+	self:EnableCustomCollisions(true) -- Gravity gun likes to mess with it
+	
+	if SERVER then	
+		self:NextThink( CurTime() )
+	elseif CLIENT then
+		self:SetNextClientThink( CurTime() )
 	end
 	
-	QUBELib.MeshParser.UnRegister(self)
+	return true
 end
 --- GENERAL ----
 ----------------
@@ -139,26 +158,46 @@ end
 ----------------
 --- Physics ----
 function ENT:CreateOBBPhysics(minOBB, maxOBB)
-	if CLIENT then
-		if IsValid( self.CLIENT_PHYSICS_BOX ) then
-			self.CLIENT_PHYSICS_BOX:Destroy()
-		end
+	if IsValid( self.PHYSICS_BOX ) then
+		self.PHYSICS_BOX:Destroy()
 	end
 	
 	-- Create OBB physics --
-	self:PhysicsDestroy()
+	self.PHYSICS_BOX = CreatePhysCollideBox( minOBB, maxOBB )
+	self:SetCollisionBounds( minOBB, maxOBB )
+	
 	if SERVER then
-		self:PhysicsInitBox( minOBB, maxOBB )
-		self:SetSolid( SOLID_VPHYSICS )
-		
 		local phys = self:GetPhysicsObject()
+		
 		if IsValid(phys) then
 			phys:EnableMotion( false )
 			phys:Sleep()
 		end
-	else
-		self.CLIENT_PHYSICS_BOX = CreatePhysCollideBox( minOBB, maxOBB )
 	end
+end
+
+function ENT:TestCollision( startpos, delta, isbox, extents )
+	if not IsValid( self.PHYSICS_BOX ) then
+		return
+	end
+	
+	-- TraceBox expects the trace to begin at the center of the box, but TestCollision is bad
+    local max = extents
+    local min = -extents
+    max.z = max.z - min.z
+    min.z = 0
+
+    local hit, norm, frac = self.PHYSICS_BOX:TraceBox( self:GetPos(), self:GetAngles(), startpos, startpos + delta, min, max )
+
+    if not hit then
+        return
+    end
+
+    return { 
+        HitPos = hit,
+        Normal  = norm,
+        Fraction = frac,
+    }
 end
 
 function ENT:BuildPhysics(meshData)

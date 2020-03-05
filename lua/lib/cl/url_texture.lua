@@ -146,13 +146,18 @@ QUBELib.URLMaterial.CreateMaterial = function(name, baseTexture)
 	return CreateMaterial(name, "VertexLitGeneric", {
 		["$basetexture"] = baseTexture,
 		
-		["$alpha"] = "1",
 		["$alphatest"] = "1",
-		["$alphatestreference"] = ".5",
 		["$allowalphatocoverage"] = "1",
+		
+		["$distancealpha"] = "1",
+		
+		["$vertexcolor"] = "1",
 		
 		["$model"] = "1",
 		["$nocull"] = "1",
+		["$nomip"] = "1",
+        ["$nolod"] = "1",
+        ["$nocompress"] = "1",
 	})
 end
 
