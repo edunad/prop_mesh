@@ -29,7 +29,10 @@ SERVER :
 	qube_maxScaleVolume <number> - Max QUBE volume scale (Default: 580)
 	qube_minScaleVolume <number> - Min QUBE volume scale (Default: 3)
 ```
-
+```
+SHARED :
+	qube_objcache_clear - Clear cached models (If ran on server, it will clear clients cache)
+```
 ## KNOWN ISSUES
 
 - When props / thrusters / etc are "welded" to QUBE, on Adv.Duplicator / Duplicator, it will loose the original constraints
