@@ -52,6 +52,7 @@ ENT.HISTORY_MESHES = {}
 ---- INTERNAL CHECKS ----
 ENT.__LOADED_MESH__ = false
 ENT.__LOADED_TEXTURES__ = false
+ENT.__PHYSICS_BOX__ = nil
 ----
 
 language.Add( "SBoxLimit_qube_mesh", "You have hit the qube_mesh limit!" )
@@ -218,6 +219,34 @@ function ENT:OnPVSReload()
 end
 --- UTIL ---
 ------------
+
+---------------
+--- PHYSICS ---
+function ENT:TestCollision( startpos, delta, isbox, extents )
+	if not IsValid( self.__PHYSICS_BOX__ ) then
+		return
+	end
+	
+	-- TraceBox expects the trace to begin at the center of the box, but TestCollision is bad
+    local max = extents
+    local min = -extents
+    max.z = max.z - min.z
+    min.z = 0
+
+    local hit, norm, frac = self.__PHYSICS_BOX__:TraceBox( self:GetPos(), self:GetAngles(), startpos, startpos + delta, min, max )
+
+    if not hit then
+        return
+    end
+
+    return { 
+        HitPos = hit,
+        Normal  = norm,
+        Fraction = frac,
+    }
+end
+--- PHYSICS ---
+---------------
 
 ---------------
 --- DRAWING ---
@@ -403,7 +432,6 @@ function ENT:TakeScreenshot()
 	size = math.Clamp( size, 5, 1000 )
 	--
 	local ViewPos, ViewAngle = LocalToWorld(Vector(maxOBB.z - size, (maxOBB.y + minOBB.y) / 2, 0), Angle(0, 0, -90), OPos, OAngle)
-	
 	QUBELib.Thumbnail.TakeThumbnail({
 		ent = self,
 		uri = loadedMesh.uri,
@@ -412,7 +440,10 @@ function ENT:TakeScreenshot()
 	})
 	
 	-- Regenerate icons
-	timer.Simple(0.15, function() self:GenerateSpawnIcons() end)
+	timer.Simple(0.15, function()
+		if not IsValid(self) then return end
+		self:GenerateSpawnIcons() 
+	end)
 end
 --- DRAWING ---
 ---------------

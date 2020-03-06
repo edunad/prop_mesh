@@ -8,8 +8,10 @@ duplicator.RegisterEntityModifier( "SAVE_DATA", function(ply, ent, data)
 			
 	if not IsValid(ent) or not data.meshURL then return end
 	if not ent.Load then return end
+	ent.SAVE_DATA = data
 	
 	timer.Simple(0.5, function()
+		if not IsValid(ent) then return end
 		ent:Load(data.meshURL, data.textureURL, data.scale, data.phys)
 	end)
 end)
