@@ -84,7 +84,7 @@ function ENT:LoadTextures(textures)
 	
 	for _, v in pairs(textures) do
 		if not v or string_trim(v) == "" then continue end
-		QUBELib.URLMaterial.LoadMaterialURL(self, v, function()
+		QUBELib.URLMaterial.LoadMaterialURL(v, function()
 			return onDone()
 		end, function()
 			return onDone()

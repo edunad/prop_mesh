@@ -26,15 +26,15 @@ end
 QUBELib.URLMaterial.ReloadTextures = function()
 	QUBELib.URLMaterial.Clear() -- Clear all materials first
 	
-	for uri, ent in pairs(QUBELib.URLMaterial.RequestedTextures) do
-		if not IsValid(ent) then continue end
-		QUBELib.URLMaterial.LoadMaterialURL(ent, uri)
+	for uri, _ in pairs(QUBELib.URLMaterial.RequestedTextures) do
+		print("[QUBELib] Reloading texture ".. uri)
+		QUBELib.URLMaterial.LoadMaterialURL(uri)
 	end
 	
 	print("[QUBELib] Reloaded " .. tostring(table_count(QUBELib.URLMaterial.RequestedTextures)) .. " textures!")
 end
 
-QUBELib.URLMaterial.LoadMaterialURL = function(ent, uri, success, failure)
+QUBELib.URLMaterial.LoadMaterialURL = function(uri, success, failure)
 	if uri == "" then return end
 	
 	if QUBELib.URLMaterial.Materials[uri] then
@@ -125,8 +125,7 @@ QUBELib.URLMaterial.LoadMaterialURL = function(ent, uri, success, failure)
 		</html>
 	]])
 	
-	
-	QUBELib.URLMaterial.RequestedTextures[uri] = ent -- Used on texture reload
+	QUBELib.URLMaterial.RequestedTextures[uri] = true -- Used on texture reload
 	table_insert(QUBELib.URLMaterial.Panels, PANEL)
 end
 
