@@ -351,15 +351,14 @@ function ENT:DrawStatus(pos, ang)
 end
 
 function ENT:DrawModelMeshes(DebugMode)
+	if not IsValid(self) then return end
 	if not self.LOADED_MESH then return end
 	if not self.MESH_MODELS or #self.MESH_MODELS <= 0 then return end
-	if not IsValid(self) then return end
 	
 	local Fullbright = self.GetFullbright and self:GetFullbright()
 	if Fullbright then render.SuppressEngineLighting( true ) end
 	
 	self:DrawModel() -- Draw first mesh
-	
 	if #self.MESH_MODELS > 1 then
 		local matrix = Matrix()
 		matrix:SetAngles(self:GetAngles())
@@ -378,10 +377,10 @@ function ENT:DrawModelMeshes(DebugMode)
 				end
 				
 				render.SetMaterial( mat )
-				if not v.Draw then
+				
+				-- TODO: Replace with :IsValid() when it becomes available
+				if not pcall( v.Draw, v ) then
 					table_remove(self.MESH_MODELS, i)
-				else
-					v:Draw()	
 				end
 			end
 		cam.PopModelMatrix()
@@ -391,6 +390,7 @@ function ENT:DrawModelMeshes(DebugMode)
 end
 
 function ENT:GetRenderMesh()
+	if not IsValid(self) then return end
 	if not self.MESH_MODELS or #self.MESH_MODELS <= 0 then return end
 	
 	local initialMesh = self.MESH_MODELS[1]
@@ -440,7 +440,7 @@ function ENT:TakeScreenshot()
 	})
 	
 	-- Regenerate icons
-	timer.Simple(0.15, function()
+	timer.Simple(0.20, function()
 		if not IsValid(self) then return end
 		self:GenerateSpawnIcons() 
 	end)
@@ -493,7 +493,7 @@ function ENT:CreateMeshMenu()
 	props:Dock( FILL )
 	
 	-----
-	local meshURL = props:CreateRow( "Urls", "OBJ" )
+	local meshURL = props:CreateRow( "Model", "Url" )
 	meshURL:Setup( "Generic" )
 	---
 	
@@ -572,8 +572,13 @@ function ENT:CreateTextureRow(parent, index)
 		local editing = self.Inner:IsEditing()
 		local disabled = !self.Inner:IsEnabled() || !self:IsEnabled()
 
-		if ( disabled ) then
-			surface.SetDrawColor( Skin.Colours.Properties.Column_Disabled )
+		if disabled or editing then
+			if disabled then
+				surface.SetDrawColor( Skin.Colours.Properties.Column_Disabled )
+			else
+				surface.SetDrawColor( Color(230, 230, 230) )
+			end
+			
 			surface.DrawRect( w * 0.45, 0, w, h )
 		end
 
@@ -582,7 +587,11 @@ function ENT:CreateTextureRow(parent, index)
 		surface.DrawRect( w * 0.45, 0, 1, h )
 		surface.DrawRect( 0, h - 1, w, 1 )
 		
-		surface.SetDrawColor( Color(1, 1, 1) )
+		if editing then
+			surface.SetDrawColor( Color(60, 60, 60) )
+		else
+			surface.SetDrawColor( Color(1, 1, 1) )
+		end
 		surface.DrawRect( 0.1, 0.1, w * 0.45 - 0.1, h - 0.1 )
 	end
 	
@@ -676,6 +685,10 @@ function ENT:CreateHistoryMenu()
 	self.UI.ICONLIST:SetSpaceY( 5 )
 	self.UI.ICONLIST:SetSpaceX( 5 )
 	self.UI.ICONLIST:Layout()
+	self.UI.ICONLIST.Paint = function(self, w, h)
+		surface.SetDrawColor( Color(1, 1, 1) )
+		surface.DrawRect( 0, 0, w , h )
+	end
 	
 	self:GenerateSpawnIcons()
 end

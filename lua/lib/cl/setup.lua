@@ -20,9 +20,8 @@ net.Receive("qube_mesh_command", function()
 				end
 			end)
 		else
-			if ent.LocalLoadMesh then
-				ent:LocalLoadMesh(data)
-			end
+			if ent.LocalLoadMesh then return end
+			ent:LocalLoadMesh(data)
 		end
 	elseif command == "TEXTURE_LOAD" then
 		local textures = net.ReadTable()

@@ -8,6 +8,7 @@ QUBELib.MeshParser = QUBELib.MeshParser or {}
 QUBELib.MeshParser.CurThread = nil
 QUBELib.MeshParser.Threads = {}
 	
+-- TODO: Replace with :IsValid() when it becomes available
 QUBELib.MeshParser.ClearMeshes = function (imeshes)
 	if not imeshes or #imeshes <= 0 then return end
 	for _, v in pairs(imeshes) do
