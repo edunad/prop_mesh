@@ -15,12 +15,11 @@ net.Receive("qube_mesh_command", function()
 		
 		if not IsValid(ent) then
 			return QUBELib.PVSCache.CacheNetMessage(indx, command, function(newEnt)
-				if newEnt.LocalLoadMesh then
-					newEnt:LocalLoadMesh(data)
-				end
+				if not newEnt.LocalLoadMesh then return end
+				newEnt:LocalLoadMesh(data)
 			end)
 		else
-			if ent.LocalLoadMesh then return end
+			if not ent.LocalLoadMesh then return end
 			ent:LocalLoadMesh(data)
 		end
 	elseif command == "TEXTURE_LOAD" then
@@ -34,7 +33,6 @@ net.Receive("qube_mesh_command", function()
 		else
 			if not ent.LoadTextures then return end
 			ent:LoadTextures(textures)
-			return
 		end
 	elseif command == "MESH_PHYS_SCALE" then
 		local phys = net.ReadVector()
@@ -47,7 +45,6 @@ net.Receive("qube_mesh_command", function()
 		else
 			if not ent.SetPhysScale then return end
 			ent:SetPhysScale(phys)
-			return
 		end
 	elseif command == "MODEL_FAILED" then
 		local errored = net.ReadBool()
