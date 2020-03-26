@@ -214,7 +214,6 @@ function ENT:SetStatus(newStatus)
 end
 
 function ENT:SetModelErrored(errored)
-	if self.LAST_MODEL_ERRORED == errored then return end
 	self.LAST_MODEL_ERRORED = errored
 	
 	if SERVER then
@@ -271,7 +270,7 @@ end
 -------------
 ---  OBJ  ---
 function ENT:CheckOBJUri(uri, onComplete)
-	local allowedTypes = {"text/plain", "application/octet%-stream"}
+	local allowedTypes = {"text/plain", "application/octet%-stream", "application/x%-tgif"}
 	
 	HTTP({
 		url = uri,
@@ -280,13 +279,14 @@ function ENT:CheckOBJUri(uri, onComplete)
 			["Range"] = "bytes=0-"
 		},
 		success = function(body, len, headers, code)
-			if not headers then return onComplete() end
+			if not headers then return onComplete("!! Cannot PRE-FETCH model !!") end
 			
 			local fileSize = headers["Content-Length"] or headers["content-length"]
-			if not fileSize then return onComplete() end
+			if not fileSize then return onComplete("!! Failed to find 'Content-Length' header !!") end
 			
 			local fileType = headers["Content-Type"]
-			if not fileType then return onComplete() end
+			if not fileType then return onComplete("!! Failed to find 'Content-Type' header !!") end
+			
 			
 			local foundType = false
 			for _, v in pairs(allowedTypes) do
@@ -296,14 +296,20 @@ function ENT:CheckOBJUri(uri, onComplete)
 				end
 			end
 			
-			if not foundType then return onComplete() end
-			return onComplete({
+			if not foundType then
+				print("[QUBELib] Allowed content-types: ")
+				PrintTable(allowedTypes)
+				
+				return onComplete("!! Content-Type '" .. fileType .. "' not allowed !!") 
+			end
+			
+			return onComplete(nil, {
 				fileSize = tonumber(fileSize),
 				fileType = fileType
 			})
 		end,
 		failed = function(err)
-			return onComplete()
+			return onComplete("!! Cannot PRE-FETCH model !!")
 		end
 	})
 end
@@ -328,10 +334,10 @@ function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 			end
 			
 			self:SetStatus("Pre-fetching model")
-			self:CheckOBJUri(uri, function(data)
-				if not data then 
+			self:CheckOBJUri(uri, function(err, data)
+				if err then 
 					QUBELib.MeshParser.QueueDone()
-					return onFail("!! Invalid model url !!")
+					return onFail(err)
 				end
 				
 				local niceSize = QUBELib.Util.NiceSize(data.fileSize)

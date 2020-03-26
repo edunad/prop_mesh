@@ -69,6 +69,8 @@ surface.CreateFont( "QUBE_DEBUGFIXED", {
 ---------------
 --- GENERAL ---
 function ENT:LoadTextures(textures)
+	if not IsValid(self) then return end
+	
 	self.MATERIALS_URL = {}
 	self.__LOADED_TEXTURES__ = false
 	
@@ -77,8 +79,12 @@ function ENT:LoadTextures(textures)
 		totalTextures = totalTextures - 1
 		
 		if totalTextures <= 0 then
+			if not IsValid(self) then return end
 			self.__LOADED_TEXTURES__ = true
-			self:CheckMeshCompletion()
+			
+			if self.CheckMeshCompletion then
+				self:CheckMeshCompletion()
+			end
 		end
 	end
 	
@@ -306,7 +312,7 @@ function ENT:DrawDEBUGInfo()
 		local TexVec2, TexAng2 = LocalToWorld( Vector(minROBB.x + 0.5, minROBB.y, maxROBB.z), Angle(), pos, ang )
 		cam.Start3D2D( TexVec2, TexAng2, 0.1)
 			for k, v in pairs(meshData.subMeshes) do
-				local color = self.DEBUG_MATERIALS_COLORS[k]
+				local color = self.DEBUG_MATERIALS_COLORS[k] or Vector(0, 0, 0)
 				draw.SimpleTextOutlined( k ..": ".. v.name , "QUBE_DEBUGFIXED", 0,  k * 18 - ((#meshData.subMeshes + 1) * 19), Color(color[1] * 255,color[2] * 255, color[3] * 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_LEFT, 1, Color(1, 1, 1))
 			end
 		cam.End3D2D()	
@@ -369,11 +375,11 @@ function ENT:DrawModelMeshes(DebugMode)
 			for i = 2, #self.MESH_MODELS do
 				local v = self.MESH_MODELS[i]
 				if not v or v == NULL then continue end
-					
+				
 				local mat = self:GetModelMaterial(i, DebugMode)
 				if DebugMode then
-					local color = self.DEBUG_MATERIALS_COLORS[i]
-					mat:SetVector("$color2", Vector(color[1], color[2], color[3]))	
+					local debugColor = self.DEBUG_MATERIALS_COLORS[i] or Vector(0, 0, 0)
+					mat:SetVector("$color2", Vector(debugColor[1], debugColor[2], debugColor[3]))
 				end
 				
 				render.SetMaterial( mat )
@@ -401,8 +407,8 @@ function ENT:GetRenderMesh()
 	
 	local mat = self:GetModelMaterial(1, DebugMode)
 	if DebugMode then
-		local color = self.DEBUG_MATERIALS_COLORS[1]
-		mat:SetVector("$color2", Vector(color[1], color[2], color[3])) -- Might be a bad idea, but it looks cool
+		local debugColor = self.DEBUG_MATERIALS_COLORS[1] or Vector(0, 0, 0)
+		mat:SetVector("$color2", Vector(debugColor[1], debugColor[2], debugColor[3])) -- Might be a bad idea, but it looks cool
 	end
 	
 	return { Mesh = self.MESH_MODELS[1], Material = mat } -- Render first mesh
