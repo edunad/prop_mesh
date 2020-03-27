@@ -120,6 +120,8 @@ function ENT:BuildIMesh(meshData)
 			self:ClearMeshes()
 			
 			local safeScale = self:VectorToSafe(meshData, meshData.scale)
+			if not safeScale then safeScale = 1 end
+			
 			local minOBB = meshData.minOBB * safeScale
 			local maxOBB = meshData.maxOBB * safeScale
 			
@@ -148,8 +150,8 @@ end
 function ENT:MeshComplete()
 	local owner = self:GetOwner()
 	if self.CPPIGetOwner then owner = self:CPPIGetOwner() end
-	
 	if LocalPlayer() ~= owner then return end
+	
 	self:TakeScreenshot()
 end
 
@@ -429,7 +431,7 @@ function ENT:TakeScreenshot()
 	size = math.max( size, math.abs(minOBB.y) + math.abs(maxOBB.y) )
 	size = math.max( size, math.abs(minOBB.z) + math.abs(maxOBB.z) )
 	
-	if ( size < 900 ) then
+	if ( size < 600 ) then
 		size = size * (1 - ( size / 254 ))
 	else
 		size = size * (1 - ( size / 4096 ))
@@ -437,6 +439,7 @@ function ENT:TakeScreenshot()
 	
 	size = math.Clamp( size, 5, 1000 )
 	--
+	
 	local ViewPos, ViewAngle = LocalToWorld(Vector(maxOBB.z - size, (maxOBB.y + minOBB.y) / 2, 0), Angle(0, 0, -90), OPos, OAngle)
 	QUBELib.Thumbnail.TakeThumbnail({
 		ent = self,
@@ -446,7 +449,7 @@ function ENT:TakeScreenshot()
 	})
 	
 	-- Regenerate icons
-	timer.Simple(0.20, function()
+	timer.Simple(0.15, function()
 		if not IsValid(self) then return end
 		self:GenerateSpawnIcons() 
 	end)

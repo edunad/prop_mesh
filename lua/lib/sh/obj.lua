@@ -292,13 +292,13 @@ QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 			end
 			
 			-- OBB parsing --
-			minOBB.x = math_min(pos.x, minOBB.x)
-			minOBB.y = math_min(pos.y, minOBB.y)
-			minOBB.z = math_min(pos.z, minOBB.z)
+			minOBB.x = math_min(x, minOBB.x)
+			minOBB.y = math_min(y, minOBB.y)
+			minOBB.z = math_min(z, minOBB.z)
 				
-			maxOBB.x = math_max(pos.x, maxOBB.x)
-			maxOBB.y = math_max(pos.y, maxOBB.y)
-			maxOBB.z = math_max(pos.z, maxOBB.z)
+			maxOBB.x = math_max(x, maxOBB.x)
+			maxOBB.y = math_max(y, maxOBB.y)
+			maxOBB.z = math_max(z, maxOBB.z)
 			---------
 		elseif CLIENT then
 			if mode == "vt" then -- UV
@@ -336,6 +336,14 @@ QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 		
 		coroutine_yield(false, "Parsing raw data")
 	end
+	
+	if minOBB.x == 0 then minOBB.x = -1 end
+	if minOBB.y == 0 then minOBB.y = -1 end
+	if minOBB.z == 0 then minOBB.z = -1 end
+	
+	if maxOBB.x == 0 then maxOBB.x = 1 end
+	if maxOBB.y == 0 then maxOBB.y = 1 end
+	if maxOBB.z == 0 then maxOBB.z = 1 end
 	
 	--
 	if SERVER then

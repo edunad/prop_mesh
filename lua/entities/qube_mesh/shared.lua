@@ -157,6 +157,9 @@ end
 function ENT:CreateOBBPhysics(minOBB, maxOBB)
 	if not IsValid(self) then return end
 	
+	minOBB = QUBELib.Util.SafeVector(minOBB, true)
+	maxOBB = QUBELib.Util.SafeVector(maxOBB, false)
+	
 	if CLIENT then
 		if IsValid( self.__PHYSICS_BOX__ ) then
 			self.__PHYSICS_BOX__:Destroy()
@@ -182,12 +185,10 @@ end
 
 function ENT:BuildPhysics(meshData)
 	local safeScale = self:VectorToSafe(meshData, meshData.phys)
+	if not safeScale then safeScale = 1 end
+	
 	local minOBB = meshData.minOBB * safeScale
 	local maxOBB = meshData.maxOBB * safeScale
-	
-	-- Prevent physics crashes --
-	minOBB = Vector(minOBB.x or 1, minOBB.y or 1, minOBB.z or 1)
-	maxOBB = Vector(maxOBB.x or 1, maxOBB.y or 1, maxOBB.z or 1)
 	
 	self:CreateOBBPhysics(minOBB, maxOBB)
 end

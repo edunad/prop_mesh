@@ -58,10 +58,15 @@ QUBELib.Thumbnail.RemoveHook = function()
 	hook.Remove("PostDrawViewModel", "__qube_mesh_screenshot__")
 end
 
+QUBELib.Thumbnail.ClearHook = function()
+	QUBELib.Thumbnail.TakingScreenshot = false
+	QUBELib.Thumbnail.RemoveHook()
+end
+
 QUBELib.Thumbnail.ScreenshotDrawHook = function(data)
 	hook.Add("PostDrawViewModel", "__qube_mesh_screenshot__", function()
-		local ply = LocalPlayer()
-		if not IsValid(ply) or not QUBELib.Thumbnail.TakingScreenshot then return end
+		if not QUBELib.Thumbnail.TakingScreenshot then return QUBELib.Thumbnail.ClearHook() end
+		if not data or not IsValid(data.ent) then return QUBELib.Thumbnail.ClearHook() end
 		
 		local thumbnailData = nil
 		render.PushRenderTarget( QUBELib.Thumbnail.RTTexture )
@@ -69,7 +74,7 @@ QUBELib.Thumbnail.ScreenshotDrawHook = function(data)
 				render.Clear( 35, 35, 35, 255, true )
 				
 				render.SuppressEngineLighting( true )
-					data.ent:Draw()
+					data.ent:DrawTranslucent()
 				render.SuppressEngineLighting( false )
 				
 				local startX = (ScrW() - 1024) / 2
@@ -102,8 +107,7 @@ QUBELib.Thumbnail.ScreenshotDrawHook = function(data)
 			QUBELib.Thumbnail.SaveThumbnail(data.uri, thumbnailData)
 		end
 		
-		QUBELib.Thumbnail.TakingScreenshot = false
-		QUBELib.Thumbnail.RemoveHook()
+		QUBELib.Thumbnail.ClearHook()
 	end)
 end
 
