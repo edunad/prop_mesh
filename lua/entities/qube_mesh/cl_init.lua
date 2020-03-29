@@ -71,7 +71,7 @@ surface.CreateFont( "QUBE_DEBUGFIXED", {
 function ENT:LoadTextures(textures)
 	if not IsValid(self) then return end
 	
-	self.MATERIALS_URL = {}
+	self.MATERIAL_URLS = {}
 	self.__LOADED_TEXTURES__ = false
 	
 	local totalTextures = #textures
@@ -96,7 +96,7 @@ function ENT:LoadTextures(textures)
 			return onDone()
 		end)
 		
-		table_insert(self.MATERIALS_URL, v)
+		table_insert(self.MATERIAL_URLS, v)
 	end
 end
 
@@ -206,9 +206,9 @@ function ENT:GetModelMaterial(index, DebugMode)
 	end
 	
 	local mat = self.DEFAULT_MATERIAL
-	if self.MATERIALS_URL and self.MATERIALS_URL[index] then
-		if QUBELib.URLMaterial.Materials[self.MATERIALS_URL[index]] then
-			mat = QUBELib.URLMaterial.Materials[self.MATERIALS_URL[index]]
+	if self.MATERIAL_URLS and self.MATERIAL_URLS[index] then
+		if QUBELib.URLMaterial.Materials[self.MATERIAL_URLS[index]] then
+			mat = QUBELib.URLMaterial.Materials[self.MATERIAL_URLS[index]]
 		end
 	end
 	
@@ -770,7 +770,7 @@ end
 function ENT:UpdateTextureName(texturesData)
 	if not self.UI or not IsValid(self.UI.PANEL) or not self.UI.TextureRows then return end
 	
-	local materials = table_copy(self.MATERIALS_URL) or {}
+	local materials = table_copy(self.MATERIAL_URLS) or {}
 	if texturesData and texturesData.textures then
 		materials = texturesData.textures
 	end
