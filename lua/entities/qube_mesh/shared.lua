@@ -279,9 +279,9 @@ function ENT:CheckOBJUri(uri, onComplete)
 		headers = {
 			["Range"] = "bytes=0-"
 		},
-		success = function(body, len, headers, code)
+		success = function(code, body, headers)
 			if not headers then return onComplete("!! Cannot PRE-FETCH model !!") end
-			
+
 			local fileSize = headers["Content-Length"] or headers["content-length"]
 			if not fileSize then return onComplete("!! Failed to find 'Content-Length' header !!") end
 			
@@ -350,15 +350,20 @@ function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 				end
 				
 				self:SetStatus("Fetching model")
-				http.Fetch(uri, function(body, len, headers, code)
-					fetchBody = body
-					bodySize = niceSize
-					
-					return onInitialized()
-				end, function(err)
-					QUBELib.MeshParser.QueueDone()
-					return onFail("!! Invalid url !!")
-				end)
+				HTTP({
+					url = uri,
+					method = "GET",
+					success = function(code, body, headers)
+						fetchBody = body
+						bodySize = niceSize
+						
+						return onInitialized()
+					end,
+					failed = function(err)
+						QUBELib.MeshParser.QueueDone()
+						return onFail("!! Invalid url !!")
+					end
+				})
 			end)
 		end,
 	

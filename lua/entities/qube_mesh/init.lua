@@ -126,13 +126,8 @@ function ENT:Load(uri, textures, scale, phys)
 	-- FIX INPUT ---
 	scale = QUBELib.Util.ClampVector(scale or Vector(1, 1, 1), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
 	phys = QUBELib.Util.ClampVector(phys or Vector(1, 1, 1), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
+	uri = QUBELib.Util.FixUrl(uri)
 	----------
-
-	-- Quick Dropbox fix --
-	if string_find(uri, "dropbox") then
-		uri = string_replace(uri, "dl=1", "raw=1")
-	end
-	--
 
 	-- Adv dupe saving
 	self.SAVE_DATA = {meshURL = uri, textures = textures, scale = scale, phys = phys}

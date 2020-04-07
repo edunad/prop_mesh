@@ -11,6 +11,7 @@ local string_split = string.Split
 local string_trim = string.Trim
 local string_find = string.find
 local string_explode = string.Explode
+local string_replace = string.Replace
 
 QUBELib = QUBELib or {}
 QUBELib.Obj = QUBELib.Obj or {}
@@ -247,11 +248,44 @@ if CLIENT then
 
 	QUBELib.Obj.NewSubMesh = function(name)
 		return {
+			mtl = 'default',
+			
 			positionsCount = 0,
 			faceLines = {},
 			name = name
 		}
 	end
+end
+
+-- ID: newmtl None
+-- TEXTURE: map_Kd Sheep_VertColor.png
+QUBELib.Obj.ParseMTL = function(baseURL, body)
+	local parsedData = {}
+	local rawData = string_split(body, "\n")
+	
+	local currentMTL = {}
+	for _, v in pairs(rawData) do
+		local data = string_explode("%s+", v, true)
+		local mode = tostring(data[1])
+		
+		if mode == "newmtl" then
+			currentMTL.id = tostring(data[2])
+		elseif mode == "map_Kd" then
+			local filePath = tostring(data[#data])
+			filePath = string_replace(filePath, '\\', '/')
+			filePath = string_replace(filePath, '//', '/')
+			
+			currentMTL.material = filePath
+		end
+		
+		-- GROUP DONE --
+		if currentMTL.id and currentMTL.material then
+			parsedData[currentMTL.id] = table_copy(currentMTL)
+			currentMTL = {}
+		end
+	end
+	
+	return parsedData
 end
 
 QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
@@ -277,7 +311,7 @@ QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 	
 	for _, v in pairs(rawData) do
 		local data = string_explode("%s+", v, true)
-		local mode = data[1]
+		local mode = tostring(data[1])
 		
 		if mode == "v" then -- POSITION
 			local x = tonumber(data[2]) or 1
@@ -324,13 +358,15 @@ QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 				end
 				
 				subMeshes[#subMeshes].faceLines[#subMeshes[#subMeshes].faceLines + 1] = parts
-			elseif mode == "o" then
+			elseif mode == "o" then -- OBJECT
 				local name = tostring(data[2]) or ("obj_" .. #subMeshes)
 				local maxSubMeshes = QUBELib.Obj.MAX_SUBMESHES:GetInt()
 				
 				if #subMeshes < maxSubMeshes or isAdmin then
 					table_insert(subMeshes, QUBELib.Obj.NewSubMesh(name))
 				end
+			elseif mode == "usemtl" then -- MATERIAL ID
+				subMeshes[#subMeshes].mtl = tostring(data[2])
 			end
 		end
 		
@@ -379,6 +415,7 @@ QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 			end
 			
 			tris.name = objMesh.name
+			tris.mtl = objMesh.mtl
 			
 			table_insert(parsedSubMeshes, tris)
 			coroutine_yield(false, "Parsing Sub-Mesh")

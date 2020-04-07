@@ -2,9 +2,11 @@ include('shared.lua')
 
 local table_insert = table.insert
 local table_remove = table.remove
-local string_split = string.Split
-local string_trim = string.Trim
 local table_copy = table.Copy
+local table_count = table.Count
+
+local string_path = string.GetPathFromFilename
+local string_trim = string.Trim
 
 local math_rand = math.Rand
 
@@ -89,8 +91,12 @@ function ENT:LoadTextures(textures)
 	end
 	
 	for _, v in pairs(textures) do
-		if not v or string_trim(v) == "" then continue end
-		QUBELib.URLMaterial.LoadMaterialURL(v, function()
+		if not v or string_trim(v) == "" then 
+			onDone()
+			continue
+		end
+		
+		QUBELib.URLMaterial.LoadMaterialURL(QUBELib.Util.FixUrl(v), function()
 			return onDone()
 		end, function()
 			return onDone()
@@ -137,6 +143,8 @@ function ENT:BuildIMesh(meshData)
 			self.__LOADED_MESH__ = true
 			
 			self:UpdateTextureName() -- Fix names
+			
+			print("CheckMeshCompletion - mesh")
 			self:CheckMeshCompletion()
 		end
 	})
@@ -178,8 +186,8 @@ function ENT:LocalLoadMesh(requestData)
 		self:BuildMeshes(meshData)
 	end, function(err)
 		print("[Qube]"..err)
-		
 		if not IsValid(self) then return end
+		
 		self:SetModelErrored(true)
 		self:SetStatus(err)
 	end)
@@ -441,6 +449,7 @@ function ENT:TakeScreenshot()
 	--
 	
 	local ViewPos, ViewAngle = LocalToWorld(Vector(maxOBB.z - size, (maxOBB.y + minOBB.y) / 2, 0), Angle(0, 0, -90), OPos, OAngle)
+	
 	QUBELib.Thumbnail.TakeThumbnail({
 		ent = self,
 		uri = loadedMesh.uri,
@@ -522,6 +531,24 @@ function ENT:CreateMeshMenu()
 	meshPhysReset:Setup( "Boolean" )
 	meshPhysReset:SetValue( false )
 	
+	local panelParent = meshPhysReset:GetChildren()[2]:GetChildren()[1]
+	local checkBox = panelParent:GetChildren()[1]
+	local showCheckboxText = false
+	
+	checkBox:SetPos(0, 1)
+	checkBox:SetSize(280, 17)
+	checkBox.Paint = function(self, w, h)
+		derma.SkinHook( "Paint", "Button", self, w, h )
+		if not showCheckboxText then return end
+		
+		surface.SetFont("DermaDefaultBold")
+		local tW, tH = surface.GetTextSize( "Done!" )
+		
+		surface.SetTextColor( Color(39, 174, 96) )
+		surface.SetTextPos( ((w - tW) / 2) + 5, 2 ) -- Watever
+		surface.DrawText( "Done!" )
+	end
+	
 	local meshPhysX = props:CreateRow( "Physics Scale", "Physics X" )
 	meshPhysX:Setup( "Float", { min = self.MIN_SAFE_SCALE, max = self.MAX_SAFE_SCALE } )
 	
@@ -552,6 +579,13 @@ function ENT:CreateMeshMenu()
 		
 		meshPhysReset:SetValue( false )
 		surface.PlaySound( "garrysmod/ui_click.wav" )
+		
+		showCheckboxText = true
+		
+		timer.Destroy("__qube_reset_ok__")
+		timer.Create("__qube_reset_ok__", 1, 1, function() 
+			showCheckboxText = false
+		end)
 	end
 	----
 	
@@ -610,6 +644,158 @@ function ENT:CreateTextureRow(parent, index)
 	}
 end
 
+-------------
+---  MTL  ---
+function ENT:PreFetchMTL(uri, onComplete)
+	HTTP({
+		url = uri,
+		method = "HEAD",
+		headers = {
+			["Range"] = "bytes=0-"
+		},
+		success = function(code, body, headers)
+			if not headers then return onComplete("!! Cannot PRE-FETCH MTL !!") end
+			
+			local fileSize = headers["Content-Length"] or headers["content-length"]
+			if not fileSize then return onComplete("!! Failed to find 'Content-Length' header !!") end
+
+			return onComplete(nil, tonumber(fileSize))
+		end,
+		failed = function(err)
+			return onComplete("!! Cannot PRE-FETCH MTL !!")
+		end
+	})
+end
+
+function ENT:MapMTLTexture(uri, onComplete)
+	uri = QUBELib.Util.FixUrl(uri) -- Quick fix
+	
+	self:PreFetchMTL(uri, function(err, dataSize)
+		if err then return onComplete(err) end
+		if not dataSize then return onComplete("!! Cannot PRE-FETCH MTL !!") end
+		if dataSize > 20000 then return onComplete("!! MTL file too big (Max: 20kb) !!") end
+		
+		local baseUrl = string_path( uri )
+		local directLinkSupport = true
+		if baseUrl:find("drive.google.com", 1, true) or baseUrl:find("dropbox", 1, true) then
+			directLinkSupport = false
+		end
+		
+		HTTP({
+			url = uri,
+			method = "GET",
+			success = function(code, body, headers)
+				if not body or string_trim(body) == "" then return onComplete("!! Invalid MTL url !!") end
+			
+				local data = QUBELib.Obj.ParseMTL(baseUrl, body)
+				if not data or table_count(data) <= 0 then return onComplete("!! Invalid MTL file !!") end
+
+				local meshData = self.LOADED_MESH
+				local mapped = 0
+				
+				for k, v in pairs(meshData.subMeshes) do
+					if not v then continue end
+					if not v.mtl or string_trim(v.mtl) == "" then continue end
+					if not data[v.mtl] then continue end
+					
+					local tRow = self.UI.TextureRows[k]
+					if not tRow or not tRow.rowText or not tRow.rowText.Label then continue end
+					
+					if directLinkSupport then
+						tRow.uriText:SetText(baseUrl .. data[v.mtl].material)
+					else
+						tRow.uriText:SetText("REPLACE WITH GENERATED URL FOR: " .. data[v.mtl].material) -- User needs to generate
+					end
+					
+					mapped = mapped + 1
+				end
+				
+				if mapped <= 0 then
+					return onComplete("!! Failed to map MTL !!")
+				else
+					return onComplete(nil)
+				end
+			end,
+			failed = function(err)
+				return onComplete("!! Invalid MTL url !!")
+			end
+		})
+	end)
+end
+
+function ENT:CreateMTLMapper(parent)
+	local mtlMapper = parent:CreateRow( "MTL Mapper", "Url" )
+	mtlMapper:Setup( "Generic" )
+	
+	local lastError = nil
+	local isLoading = false
+	local onError = function(err)
+		print("[Qube]"..err)
+		
+		lastError = err
+		surface.PlaySound( "buttons/button8.wav" )
+		
+		timer.Destroy("__qube_reset_err__")
+		timer.Create("__qube_reset_err__", 2, 1, function()
+			lastError = nil
+		end)
+	end
+	
+	local mtlData = mtlMapper:GetChildren()[2]:GetChildren()[1]:GetChildren()[1]
+	local mtlMapperButton = parent:CreateRow( "MTL Mapper", "Apply MTL" )
+	mtlMapperButton:Setup( "Boolean" )
+	mtlMapperButton.DataChanged = function( _, val )
+		if not val then return end
+		mtlMapperButton:SetValue( false )
+		
+		if isLoading then return end
+		if not self.LOADED_MESH then return onError("!! No mesh loaded !!") end
+		
+		local mtlUri = mtlData:GetValue()
+		if mtlUri and string_trim(mtlUri) != "" then
+			surface.PlaySound( "garrysmod/ui_click.wav" )
+			
+			isLoading = true
+			lastError = nil
+			
+			self:MapMTLTexture(mtlUri, function(err)
+				if err then onError(err) end
+				isLoading = false
+			end)
+		else
+			return onError("!! Invalid MTL url !!")
+		end
+	end
+	
+	local panelParent = mtlMapperButton:GetChildren()[2]:GetChildren()[1]
+	local checkBox = panelParent:GetChildren()[1]
+	
+	checkBox:SetPos(0, 1)
+	checkBox:SetSize(272, 17)
+	checkBox.Paint = function(self, w, h)
+		derma.SkinHook( "Paint", "Button", self, w, h )
+		surface.SetFont("DermaDefaultBold")
+		
+		if isLoading then
+			local txt = "Parsing MTL.."
+			local tW, tH = surface.GetTextSize( txt )
+			
+			surface.SetTextColor( Color(41, 128, 185) )
+			surface.SetTextPos( ((w - tW) / 2) + 5, 2 ) -- Watever
+			surface.DrawText( txt )
+		elseif lastError then
+			local tW, tH = surface.GetTextSize( lastError )
+			
+			surface.SetTextColor( Color(231, 76, 60) )
+			surface.SetTextPos( ((w - tW) / 2) + 5, 2 ) -- Watever
+			surface.DrawText( lastError )
+		end
+	end
+end
+
+
+---  MTL  ---
+-------------
 function ENT:CreateTextureMenu()
 	local maxMaterials = QUBELib.Obj.MAX_SUBMESHES:GetInt()
 	if LocalPlayer():IsAdmin() then
@@ -621,6 +807,10 @@ function ENT:CreateTextureMenu()
 	
 	local props = vgui.Create( "DProperties", texturePanel )
 	props:Dock( FILL )
+	
+	--- MAPPER ---
+	self:CreateMTLMapper(props)
+	----
 	
 	self.UI.TextureRows = {}
 	for i = 1, maxMaterials do 
@@ -658,11 +848,20 @@ function ENT:LoadHistory()
 	self.HISTORY_MESHES = util.JSONToTable( rawHistory )
 end
 
+function ENT:CreateButtonMaterial(path)
+	local tempMat = Material(path)
+	tempMat:Recompute()
+	
+	return tempMat
+end
+
 function ENT:CreateSpawnIcon(uri, panel, iconLayout, onClick, onRightClick)
 	local button = vgui.Create( "DImageButton", iconLayout )
 	button:SetSize( 128, 128 )
 	button:SetTooltip(uri)
-	button:SetImage( "../data/qube_mesh/thumbnails/" .. util.CRC(uri) .. ".jpg" )
+	
+	local matTest = self:CreateButtonMaterial("../data/qube_mesh/thumbnails/" .. util.CRC(uri) .. ".jpg")
+	button:SetMaterial( matTest )
 	button.DoClick = function()
 		return onClick(uri)
 	end
@@ -705,11 +904,11 @@ end
 ----
 
 function ENT:SanitizeTextures(textures)
-	if not textures or #textures <= 0 then return textures end
-	
 	local cleanTextures = {}
+	if not textures or #textures <= 0 then return cleanTextures end
+	
 	for _, text in pairs(textures) do
-		if not text or string_trim(text) == "" then continue end
+		if not text then continue end
 		table_insert(cleanTextures, text)
 	end
 	
@@ -832,11 +1031,11 @@ function ENT:CreateMenu()
 		local texts = {}
 		for _, v in pairs(self.UI.TextureRows) do
 			if not v or not v.uriText then continue end
-			table_insert(texts, v.uriText:GetValue())
+			table_insert(texts, QUBELib.Util.FixUrl(v.uriText:GetValue()))
 		end
 		
 		local data = {
-			uri = elements.uri:GetValue(),
+			uri = QUBELib.Util.FixUrl(elements.uri:GetValue()),
 			scale = Vector(elements.scale[1]:GetValue(), elements.scale[2]:GetValue(), elements.scale[3]:GetValue()),
 			phys = Vector(elements.phys[1]:GetValue(), elements.phys[2]:GetValue(), elements.phys[3]:GetValue()),
 			textures = self:SanitizeTextures(texts)
