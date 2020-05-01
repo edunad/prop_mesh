@@ -63,7 +63,7 @@ QUBELib.Util.IsNan = function(x)
 	return x ~= x
 end
 
---- Taken from PAC3, thanks :D! ---
+--- From PAC3 (Thanks! :D) ---
 --- https://github.com/CapsAdmin/pac3/blob/97ab99e9e8f5f16063ee5480ee33d21970822b8c/lua/pac3/core/shared/http.lua
 QUBELib.Util.FixUrl = function(url)
 	url = url:Trim()

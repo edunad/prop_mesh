@@ -394,9 +394,10 @@ function ENT:DrawModelMeshes(DebugMode)
 				
 				render.SetMaterial( mat )
 				
-				-- TODO: Replace with :IsValid() when it becomes available
-				if not pcall( v.Draw, v ) then
+				if not v:IsValid() then
 					table_remove(self.MESH_MODELS, i)
+				else
+					v:Draw()
 				end
 			end
 		cam.PopModelMatrix()
