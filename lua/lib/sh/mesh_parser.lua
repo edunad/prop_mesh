@@ -11,7 +11,7 @@ QUBELib.MeshParser.Threads = {}
 QUBELib.MeshParser.ClearMeshes = function (imeshes)
 	if not imeshes or #imeshes <= 0 then return end
 	for _, v in pairs(imeshes) do
-		if not v or not v:IsValid() then continue end
+		if not v or v == NULL or not pcall( v.Draw, v ) then continue end
 		v:Destroy()
 	end
 end
