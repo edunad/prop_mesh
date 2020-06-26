@@ -143,8 +143,6 @@ function ENT:BuildIMesh(meshData)
 			self.__LOADED_MESH__ = true
 			
 			self:UpdateTextureName() -- Fix names
-			
-			print("CheckMeshCompletion - mesh")
 			self:CheckMeshCompletion()
 		end
 	})
@@ -152,7 +150,11 @@ end
 
 function ENT:CheckMeshCompletion()
 	if not self.__LOADED_MESH__ or not self.__LOADED_TEXTURES__ then return end
-	timer.Simple(0.1, function() self:MeshComplete() end) -- Give it some time to fully render
+	
+	timer.Simple(0.1, function() 
+		if not self.MeshComplete then return end
+		self:MeshComplete()
+	end) -- Give it some time to fully render
 end
 
 function ENT:MeshComplete()
