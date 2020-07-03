@@ -7,6 +7,7 @@ Supports multi-textured models!
 
 ## NOTES
 - Only .obj models are supported!
+- You can find QUBE on Entities -> Custom Models
 - When using QUBE make sure you at least have a **Prop Protection ADDON** (else it will use SetOwner to determine the owner, preventing you from grabbing it!)
 - If you want to use it **SINGLEPLAYER**, make sure "Local Server" is ticked! **DO NOT START IT IN PURE SINGLEPLAYER**
 
@@ -37,11 +38,13 @@ SHARED :
 
 - When props / thrusters / etc are "welded" to QUBE, on Adv.Duplicator / Duplicator, it will loose the original constraints
 - If your model looks **"weird"** try converting the faces to tris (if you use blender, when exporting the obj, tick **"Triangulate Faces"**
+- There is a limit of how many vertex a mesh can have, you might need to split it into multiple sub-meshes on blender, else it might cause your model to show weird triangles across it. (this is on TODO list)
 
 ## TODO
 ### Mesh
 - [ ] Save parsed mesh on client as cache
 - [ ] Save textures on client as cache
+- [ ] Split the mesh if triangles limit is high
 
 ### Entity
 - [ ] Fix Adv.dup constrains
