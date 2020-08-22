@@ -53,7 +53,7 @@ SHARED :
 - [X] Better UI Panel
 
 ## LINKS
-- Workshop : https://steamcommunity.com/sharedfiles/filedetails/?id=1997179073
+- [Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2205982705)
 
 ## SCREENSHOTS
 ![](https://i.imgur.com/5p3USX0.png)
