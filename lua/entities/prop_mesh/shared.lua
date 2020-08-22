@@ -28,6 +28,7 @@ ENT.MAX_OBJ_SIZE_BYTES = GetConVar( "prop_mesh_maxOBJ_bytes" )
 --- LOADED MODEL ---
 ENT.LOADED_MESH = nil
 ENT.LAST_REQUESTED_MESH = {}
+ENT.LAST_PHYSICS_OBB = nil
 
 ENT.LAST_MODEL_ERRORED = false
 ENT.MATERIAL_URLS = {}
@@ -108,9 +109,9 @@ end
 
 -------------
 --- UTIL ----
-function ENT:GetOBBSize(meshData)
-	local minOBB = meshData.minOBB
-	local maxOBB = meshData.maxOBB
+function ENT:GetOBBSize(obb)
+	local minOBB = obb.minOBB
+	local maxOBB = obb.maxOBB
 	
 	local width = maxOBB.x - minOBB.x
 	local lenght = maxOBB.y - minOBB.y
@@ -119,12 +120,12 @@ function ENT:GetOBBSize(meshData)
 	return Vector(width, lenght, height)
 end
 
-function ENT:VectorToSafe(meshData, scale)
+function ENT:VectorToSafe(scale, obb)
 	local fixedScale = PropMLIB.Util.ClampVector(Vector(scale.x, scale.y, scale.z) or Vector(1, 1, 1), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
 	local minVol = self.MIN_SAFE_VOLUME:GetInt()
 	local maxVol = self.MAX_SAFE_VOLUME:GetInt()
 	
-	local OBB = self:GetOBBSize(meshData)
+	local OBB = self:GetOBBSize(obb)
 	for i = 1, 3 do
 		local size = OBB[i]
 		local scaler = fixedScale[i]
@@ -145,6 +146,7 @@ function ENT:Clear()
 	self.LAST_REQUESTED_MESH = nil
 	self.LAST_STATUS = nil
 	self.LAST_MODEL_ERRORED = false
+	self.LAST_PHYSICS_OBB = nil
 	
 	self:SetDefaultPhysics()
 	if CLIENT then self:ClearMeshes() end
@@ -183,19 +185,30 @@ function ENT:CreateOBBPhysics(minOBB, maxOBB)
 	self:SetCollisionBounds( minOBB, maxOBB )
 end
 
-function ENT:BuildPhysics(meshData)
-	local safeScale = self:VectorToSafe(meshData, meshData.phys)
+function ENT:BuildPhysics(phys, obb)
+	local safeScale = self:VectorToSafe(phys, obb)
 	if not safeScale then safeScale = 1 end
 	
-	local minOBB = meshData.minOBB * safeScale
-	local maxOBB = meshData.maxOBB * safeScale
+	local minOBB = obb.minOBB * safeScale
+	local maxOBB = obb.maxOBB * safeScale
+
+	if self.LAST_PHYSICS_OBB and 
+	self.LAST_PHYSICS_OBB.minOBB:IsEqualTol(minOBB,0) and 
+	self.LAST_PHYSICS_OBB.maxOBB:IsEqualTol(maxOBB,0) then
+		return
+	end
 	
+	self.LAST_PHYSICS_OBB = {
+		minOBB = minOBB,
+		maxOBB = maxOBB
+	}
 	self:CreateOBBPhysics(minOBB, maxOBB)
 end
 
 function ENT:SetDefaultPhysics()
 	local minOBB = Vector(-12, -12, -12)
 	local maxOBB = Vector(12, 12, 12)
+
 	self:CreateOBBPhysics(minOBB, maxOBB)
 	
 	if CLIENT then 
@@ -245,23 +258,30 @@ function ENT:SetScale(scale)
 	end
 end
 
-function ENT:SetPhysScale(phys)
-	if not self.LOADED_MESH then return end
-	
-	self.LOADED_MESH.phys = phys
-	self.LAST_REQUESTED_MESH.phys = phys
-	
+function ENT:SetPhysScale(phys, obb)
+	if self.LOADED_MESH then
+		self.LOADED_MESH.phys = phys
+		self.LOADED_MESH.obb = obb
+	end
+
+	if self.LAST_REQUESTED_MESH then
+		self.LAST_REQUESTED_MESH.phys = phys
+		self.LAST_REQUESTED_MESH.obb = obb
+	end
+
 	-- Rebuild collisions
-	self:BuildPhysics( self.LOADED_MESH )
+	self:BuildPhysics( phys, obb )
 		
 	if SERVER then
-		self.SAVE_DATA.phys = phys -- Update scale and save it
+		self.SAVE_DATA.obb = obb -- Update obb and save it
+		self.SAVE_DATA.phys = phys -- Update phys and save it
 		self:SaveDupeData()
 		
 		net.Start("prop_mesh_command")
 			net.WriteInt(self:EntIndex(), 32)
 			net.WriteString("MESH_PHYS_SCALE")
 			net.WriteVector(phys)			
+			net.WriteTable(obb)			
 		net.Broadcast()	
 	end
 end
@@ -411,7 +431,7 @@ function ENT:BuildMeshes(meshData)
 	self.LOADED_MESH = meshData
 	
 	if CLIENT then self:BuildIMesh(meshData) end
-	self:BuildPhysics(meshData)
+	self:BuildPhysics(meshData.phys, meshData.obb)
 end
 
 ---  OBJ  ---

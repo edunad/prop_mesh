@@ -36,15 +36,16 @@ net.Receive("prop_mesh_command", function()
 		end
 	elseif command == "MESH_PHYS_SCALE" then
 		local phys = net.ReadVector()
+		local obb = net.ReadTable()
 		
 		if not IsValid(ent) then
 			return PropMLIB.PVSCache.CacheNetMessage(indx, command, function(newEnt)
 				if not newEnt.SetPhysScale then return end
-				newEnt:SetPhysScale(phys)
+				newEnt:SetPhysScale(phys, obb)
 			end)
 		else
 			if not ent.SetPhysScale then return end
-			ent:SetPhysScale(phys)
+			ent:SetPhysScale(phys, obb)
 		end
 	elseif command == "MODEL_FAILED" then
 		local errored = net.ReadBool()

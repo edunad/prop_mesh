@@ -114,7 +114,7 @@ function ENT:SaveDupeData()
 	duplicator.StoreEntityModifier(self, "SAVE_DATA", self.SAVE_DATA)
 end
 
-function ENT:Load(uri, textures, scale, phys)
+function ENT:Load(uri, textures, scale, phys, duped)
 	if not uri or string_trim(uri) == "" then return end
 	local owner = self:GetOwner()
 	if self.CPPIGetOwner then 
@@ -135,19 +135,26 @@ function ENT:Load(uri, textures, scale, phys)
 	-------
 	
 	-- Clear --
-	self:Clear()
+	if not duped then
+		self:Clear() 
+	end
 	-----------
 	
 	self:SetTextures(textures)
 	
-	self.LAST_REQUESTED_MESH = {uri = uri, scale = scale, phys = phys, isAdmin = isAdmin}
+	self.LAST_REQUESTED_MESH = {uri = uri, scale = scale, phys = phys, isAdmin = isAdmin, duped = duped}
 	self:SendLoadMesh(self.LAST_REQUESTED_MESH) -- Start client load
 	
 	-- Server load --
 	self:LoadOBJ(uri, isAdmin, function(meshData)
 		meshData.scale = scale
 		meshData.phys = phys
-		
+
+		-- Adv dupe save OBB
+		self.SAVE_DATA.obb = meshData.obb
+		self:SaveDupeData()
+		-------
+
 		self:BuildMeshes(meshData)
 	end, function(err)
 		-- ERR

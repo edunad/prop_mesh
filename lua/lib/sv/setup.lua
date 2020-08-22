@@ -10,10 +10,11 @@ duplicator.RegisterEntityModifier( "SAVE_DATA", function(ply, ent, data)
 	if not ent.Load then return end
 	ent.SAVE_DATA = data
 	
-	timer.Simple(0.5, function()
-		if not IsValid(ent) then return end
-		ent:Load(data.meshURL, data.textures, data.scale, data.phys)
-	end)
+	if data.phys and data.obb then
+		ent:SetPhysScale(data.phys, data.obb)
+	end
+
+	ent:Load(data.meshURL, data.textures, data.scale, data.phys, true)
 end)
 
 net.Receive("prop_mesh_command", function( len, ply )
@@ -53,7 +54,7 @@ net.Receive("prop_mesh_command", function( len, ply )
 			
 			ent:SetTextures(newData.textures)
 			ent:SetScale(newData.scale)
-			ent:SetPhysScale(newData.phys)
+			ent:SetPhysScale(newData.phys, currMesh.obb)
 		end
 	end
 end)

@@ -125,11 +125,11 @@ function ENT:BuildIMesh(meshData)
 			if not IsValid(self) then return end
 			self:ClearMeshes()
 			
-			local safeScale = self:VectorToSafe(meshData, meshData.scale)
+			local safeScale = self:VectorToSafe(meshData.scale, meshData.obb)
 			if not safeScale then safeScale = 1 end
 			
-			local minOBB = meshData.minOBB * safeScale
-			local maxOBB = meshData.maxOBB * safeScale
+			local minOBB = meshData.obb.minOBB * safeScale
+			local maxOBB = meshData.obb.maxOBB * safeScale
 			
 			self:SetRenderBounds( minOBB, maxOBB )
 			for _, v in pairs(meshData.subMeshes) do
@@ -172,7 +172,9 @@ end
 
 function ENT:LocalLoadMesh(requestData)
 	-- Cleanup --
-	self:Clear()
+	if not requestData.duped then 
+		self:Clear() 
+	end
 	-- ------- --
 	
 	self.LAST_REQUESTED_MESH = table_copy(requestData)
@@ -180,7 +182,7 @@ function ENT:LocalLoadMesh(requestData)
 	
 	self:LoadOBJ(requestData.uri, requestData.isAdmin, function(meshData)
 		if not IsValid(self) then return end
-		
+
 		meshData.scale = requestData.scale
 		meshData.phys = requestData.phys
 		
@@ -229,9 +231,9 @@ function ENT:OnPVSReload()
 	local meshData = self.LOADED_MESH
 	if not meshData	then return end
 	
-	local safeScale = self:VectorToSafe(meshData, meshData.scale)
-	local minOBB = meshData.minOBB * safeScale
-	local maxOBB = meshData.maxOBB * safeScale
+	local safeScale = self:VectorToSafe(meshData.scale, meshData.obb)
+	local minOBB = meshData.obb.minOBB * safeScale
+	local maxOBB = meshData.obb.maxOBB * safeScale
 	
 	self:SetRenderBounds(minOBB, maxOBB)
 end
@@ -940,7 +942,7 @@ function ENT:GenerateSpawnIcons()
 		if savedData.textures then
 			savedData.textures = self:SanitizeTextures(savedData.textures)
 		end
-		
+
 		self:UILoadData(savedData)
 		self:UpdateTextureName(savedData)
 		self:UpdateMeshSettings(savedData)

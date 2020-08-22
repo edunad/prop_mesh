@@ -389,8 +389,10 @@ PropMLIB.Obj.Parse = function(isAdmin, body, fixNormals)
 		local volumeOBB = width * lenght * height
 		
 		return {
-			minOBB = minOBB, 
-			maxOBB = maxOBB,
+			obb = {
+				minOBB = minOBB, 
+				maxOBB = maxOBB,
+			},
 			volumeOBB = width * lenght * height
 		}
 	elseif CLIENT then
@@ -432,9 +434,10 @@ PropMLIB.Obj.Parse = function(isAdmin, body, fixNormals)
 		
 		return {
 			subMeshes = parsedSubMeshes,
-			
-			minOBB = minOBB, 
-			maxOBB = maxOBB,
+			obb = {
+				minOBB = minOBB, 
+				maxOBB = maxOBB,
+			},
 			volumeOBB = width * lenght * height
 		}
 	end
