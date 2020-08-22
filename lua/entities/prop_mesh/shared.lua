@@ -6,8 +6,8 @@ ENT.PrintName		= "prop_mesh"
 ENT.Author			= "FailCake"
 ENT.RenderGroup 	= RENDERGROUP_TRANSLUCENT
 ENT.AdminOnly		= false
-ENT.Category		= "Custom Models"
-ENT.Contact			= "https://github.com/edunad/qube"
+ENT.Category		= "Custom Props"
+ENT.Contact			= "https://github.com/edunad/prop_mesh"
 ENT.Spawnable		= true
 
 local math_clamp_ = math.Clamp
