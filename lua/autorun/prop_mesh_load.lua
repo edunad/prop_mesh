@@ -1,7 +1,7 @@
-QUBELib = QUBELib or {}
+PropMLIB = PropMLIB or {}
 
 if SERVER then
-	AddCSLuaFile("autorun/qube_load.lua")
+	AddCSLuaFile("autorun/prop_mesh_load.lua")
 	
 	-- LIB --
 	-- Client side --
@@ -23,17 +23,17 @@ if SERVER then
 	include("lib/sv/setup.lua")
 	include("lib/sv/registry.lua")
 	
-	resource.AddSingleFile("materials/vgui/entities/qube_mesh.vtf")
-	resource.AddSingleFile("materials/vgui/entities/qube_mesh.vmt")
+	resource.AddSingleFile("materials/vgui/entities/prop_mesh.vtf")
+	resource.AddSingleFile("materials/vgui/entities/prop_mesh.vmt")
 end
 
 -- CLIENT --
 if CLIENT then
 	-- Folder structure
-	file.CreateDir( "qube_mesh" )
-	file.CreateDir( "qube_mesh/thumbnails" )
-	file.CreateDir( "qube_mesh/models" )
-	file.CreateDir( "qube_mesh/textures" )
+	file.CreateDir( "prop_mesh" )
+	file.CreateDir( "prop_mesh/thumbnails" )
+	file.CreateDir( "prop_mesh/models" )
+	file.CreateDir( "prop_mesh/textures" )
 	---
 	
 	include("lib/cl/setup.lua")
@@ -49,4 +49,4 @@ include("lib/sh/mesh_parser.lua")
 include("lib/sh/obj.lua")
 include("lib/sh/util.lua")
 
-if SERVER then print("[QUBELib] Startup") end
+if SERVER then print("[PropMLIB] Startup") end

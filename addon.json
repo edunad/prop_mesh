@@ -1,8 +1,8 @@
 {
-	"title"		:	"QUBE",
+	"title"		:	"prop_mesh",
 	"type"		:	"tool",
 	"tags"		:	[ "build", "fun" ],
-	"description":	"OBJ prop loader",
+	"description":	"Custom prop loader",
 	"ignore"	:
 	[
 		".git*",

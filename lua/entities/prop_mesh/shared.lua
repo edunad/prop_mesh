@@ -2,7 +2,7 @@
 ENT.Type = "anim"
 ENT.Base = "base_gmodentity"
 
-ENT.PrintName		= "QUBE"
+ENT.PrintName		= "prop_mesh"
 ENT.Author			= "FailCake"
 ENT.RenderGroup 	= RENDERGROUP_TRANSLUCENT
 ENT.AdminOnly		= false
@@ -16,13 +16,13 @@ local table_copy = table.Copy
 local string_find = string.find
 
 -- Default SETTINGS ---------
-ENT.MAX_SAFE_VOLUME = GetConVar( "qube_maxScaleVolume" )
-ENT.MIN_SAFE_VOLUME = GetConVar( "qube_minScaleVolume" )
+ENT.MAX_SAFE_VOLUME = GetConVar( "prop_mesh_maxScaleVolume" )
+ENT.MIN_SAFE_VOLUME = GetConVar( "prop_mesh_minScaleVolume" )
 
 ENT.MIN_SAFE_SCALE = 0.01
 ENT.MAX_SAFE_SCALE = 100
 
-ENT.MAX_OBJ_SIZE_BYTES = GetConVar( "qube_maxOBJ_bytes" )
+ENT.MAX_OBJ_SIZE_BYTES = GetConVar( "prop_mesh_maxOBJ_bytes" )
 -----------------------------
 
 --- LOADED MODEL ---
@@ -60,7 +60,7 @@ function ENT:Initialize()
 	self:DrawShadow( false )
 	
 	duplicator.StoreEntityModifier(self, "SAVE_DATA", self.SAVE_DATA)
-	QUBELib.Registry.RegisterQube(self)
+	PropMLIB.Registry.RegisterPMesh(self)
 end
 
 function ENT:SetupDataTables()
@@ -82,13 +82,13 @@ function ENT:OnRemove()
 				self.__PHYSICS_BOX__:Destroy()
 			end
 			
-			QUBELib.PVSCache.Remove(entIndex)
-			QUBELib.MeshParser.ClearMeshes(meshes)
-			QUBELib.MeshParser.UnRegister(self)
+			PropMLIB.PVSCache.Remove(entIndex)
+			PropMLIB.MeshParser.ClearMeshes(meshes)
+			PropMLIB.MeshParser.UnRegister(self)
 		end)
 	else
-		QUBELib.Registry.UnRegisterQube(self)
-		QUBELib.MeshParser.UnRegister(self)
+		PropMLIB.Registry.UnRegisterPMesh(self)
+		PropMLIB.MeshParser.UnRegister(self)
 	end
 end
 
@@ -120,7 +120,7 @@ function ENT:GetOBBSize(meshData)
 end
 
 function ENT:VectorToSafe(meshData, scale)
-	local fixedScale = QUBELib.Util.ClampVector(Vector(scale.x, scale.y, scale.z) or Vector(1, 1, 1), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
+	local fixedScale = PropMLIB.Util.ClampVector(Vector(scale.x, scale.y, scale.z) or Vector(1, 1, 1), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
 	local minVol = self.MIN_SAFE_VOLUME:GetInt()
 	local maxVol = self.MAX_SAFE_VOLUME:GetInt()
 	
@@ -132,7 +132,7 @@ function ENT:VectorToSafe(meshData, scale)
 		local size_clamped = math_clamp_(size_actual, minVol, maxVol)
 		local new = size_clamped / size
 		
-		if not QUBELib.Util.IsFinite(new) or math_abs(new) < 0.00000001 then return end
+		if not PropMLIB.Util.IsFinite(new) or math_abs(new) < 0.00000001 then return end
 		fixedScale[i] = new
 	end
 	
@@ -157,8 +157,8 @@ end
 function ENT:CreateOBBPhysics(minOBB, maxOBB)
 	if not IsValid(self) then return end
 	
-	minOBB = QUBELib.Util.SafeVector(minOBB, true)
-	maxOBB = QUBELib.Util.SafeVector(maxOBB, false)
+	minOBB = PropMLIB.Util.SafeVector(minOBB, true)
+	maxOBB = PropMLIB.Util.SafeVector(maxOBB, false)
 	
 	if CLIENT then
 		if IsValid( self.__PHYSICS_BOX__ ) then
@@ -218,7 +218,7 @@ function ENT:SetModelErrored(errored)
 	self.LAST_MODEL_ERRORED = errored
 	
 	if SERVER then
-		net.Start("qube_mesh_command")
+		net.Start("prop_mesh_command")
 			net.WriteInt(self:EntIndex(), 32)
 			net.WriteString("MODEL_FAILED")
 			net.WriteBool(errored)
@@ -235,7 +235,7 @@ function ENT:SetScale(scale)
 		self.SAVE_DATA.scale = scale -- Update scale and save it
 		self:SaveDupeData()
 			
-		net.Start("qube_mesh_command")
+		net.Start("prop_mesh_command")
 			net.WriteInt(self:EntIndex(), 32)
 			net.WriteString("MESH_SCALE")
 			net.WriteVector(scale)
@@ -258,7 +258,7 @@ function ENT:SetPhysScale(phys)
 		self.SAVE_DATA.phys = phys -- Update scale and save it
 		self:SaveDupeData()
 		
-		net.Start("qube_mesh_command")
+		net.Start("prop_mesh_command")
 			net.WriteInt(self:EntIndex(), 32)
 			net.WriteString("MESH_PHYS_SCALE")
 			net.WriteVector(phys)			
@@ -298,7 +298,7 @@ function ENT:CheckOBJUri(uri, onComplete)
 			end
 			
 			if not foundType then
-				print("[QUBELib] Allowed content-types: ")
+				print("[PropMLIB] Allowed content-types: ")
 				PrintTable(allowedTypes)
 				
 				return onComplete("!! Content-Type '" .. fileType .. "' not allowed !!") 
@@ -320,31 +320,31 @@ function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 	local bodySize = nil
 	local maxBytes = self.MAX_OBJ_SIZE_BYTES:GetInt()
 	
-	QUBELib.MeshParser.Register(self, {
+	PropMLIB.MeshParser.Register(self, {
 		onInitialize = function(onInitialized)
 			-- Entity died
 			if not IsValid(self) then
-				return QUBELib.MeshParser.QueueDone()
+				return PropMLIB.MeshParser.QueueDone()
 			end
 			
 			-- Being solved, send texture!
-			if QUBELib.Obj.IsCached(uri) then
+			if PropMLIB.Obj.IsCached(uri) then
 				self:SetStatus("Loading cached model")
-				onSuccess(table_copy(QUBELib.Obj.Cache[uri]))
-				return QUBELib.MeshParser.QueueDone()
+				onSuccess(table_copy(PropMLIB.Obj.Cache[uri]))
+				return PropMLIB.MeshParser.QueueDone()
 			end
 			
 			self:SetStatus("Pre-fetching model")
 			self:CheckOBJUri(uri, function(err, data)
 				if err then 
-					QUBELib.MeshParser.QueueDone()
+					PropMLIB.MeshParser.QueueDone()
 					return onFail(err)
 				end
 				
-				local niceSize = QUBELib.Util.NiceSize(data.fileSize)
+				local niceSize = PropMLIB.Util.NiceSize(data.fileSize)
 				if not isAdmin then
 					if data.fileSize > maxBytes then
-						QUBELib.MeshParser.QueueDone()
+						PropMLIB.MeshParser.QueueDone()
 						return onFail("!! Model too big (".. niceSize ..") !!")
 					end
 				end
@@ -360,7 +360,7 @@ function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 						return onInitialized()
 					end,
 					failed = function(err)
-						QUBELib.MeshParser.QueueDone()
+						PropMLIB.MeshParser.QueueDone()
 						return onFail("!! Invalid url !!")
 					end
 				})
@@ -373,14 +373,14 @@ function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 		end,
 		
 		onComplete = function(meshData)
-			QUBELib.MeshParser.QueueDone()
+			PropMLIB.MeshParser.QueueDone()
 			
 			if not IsValid(self) then return end
 			return onSuccess(meshData)
 		end,
 		
 		onFailed = function()
-			QUBELib.MeshParser.QueueDone()
+			PropMLIB.MeshParser.QueueDone()
 			if not IsValid(self) then return end
 			
 			local status = self.LAST_STATUS or "UNKNOWN"
@@ -392,14 +392,14 @@ function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 				return coroutine.yield(true, "")
 			end
 			
-			local meshData = QUBELib.Obj.Parse(isAdmin, fetchBody, true)
+			local meshData = PropMLIB.Obj.Parse(isAdmin, fetchBody, true)
 			meshData.uri = uri
 			meshData.metadata = {
 				fileSize = bodySize
 			}
 			
 			-- Cache it! --
-			QUBELib.Obj.Register(uri, meshData)
+			PropMLIB.Obj.Register(uri, meshData)
 			
 			-- Finish it --
 			return coroutine.yield(true, "Done parsing", meshData)

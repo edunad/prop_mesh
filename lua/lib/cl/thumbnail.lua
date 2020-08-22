@@ -1,75 +1,75 @@
-if SERVER then return error("[QUBELib]Tried to load 'thumbnail.lua' on SERVER") end
+if SERVER then return error("[PropMLIB]Tried to load 'thumbnail.lua' on SERVER") end
 
-QUBELib = QUBELib or {}
-QUBELib.Thumbnail = QUBELib.Thumbnail or {}
-QUBELib.Thumbnail.ThumbnailsCache = {}
-QUBELib.Thumbnail.TakingScreenshot = false
-QUBELib.Thumbnail.RTTexture = GetRenderTarget( "qube_mesh_rttexture_", ScrW(), ScrH(), true )
+PropMLIB = PropMLIB or {}
+PropMLIB.Thumbnail = PropMLIB.Thumbnail or {}
+PropMLIB.Thumbnail.ThumbnailsCache = {}
+PropMLIB.Thumbnail.TakingScreenshot = false
+PropMLIB.Thumbnail.RTTexture = GetRenderTarget( "prop_mesh_rttexture_", ScrW(), ScrH(), true )
 
-QUBELib.Thumbnail.Clear = function()
-	QUBELib.Thumbnail.ThumbnailsCache = {}
+PropMLIB.Thumbnail.Clear = function()
+	PropMLIB.Thumbnail.ThumbnailsCache = {}
 end
 
-QUBELib.Thumbnail.TakeThumbnail = function(data)
+PropMLIB.Thumbnail.TakeThumbnail = function(data)
 	if not data or not data.uri then return end
-	-- if QUBELib.Thumbnail.HasThumbnail(data.uri) then return end TODO: Figure out if textures changed / model?
+	-- if PropMLIB.Thumbnail.HasThumbnail(data.uri) then return end TODO: Figure out if textures changed / model?
 	
-	QUBELib.Thumbnail.TakingScreenshot = true
-	QUBELib.Thumbnail.ScreenshotDrawHook(data)
+	PropMLIB.Thumbnail.TakingScreenshot = true
+	PropMLIB.Thumbnail.ScreenshotDrawHook(data)
 end
 
-QUBELib.Thumbnail.SaveThumbnail = function(name, data)
+PropMLIB.Thumbnail.SaveThumbnail = function(name, data)
 	local fileName = util.CRC(name) .. ".jpg"
-	local path = "qube_mesh/thumbnails/" .. fileName
+	local path = "prop_mesh/thumbnails/" .. fileName
 	
 	local f = file.Open(path, "wb", "DATA" )
-	if not f then return print("[QUBELib] Failed to save mesh thumbnail") end
+	if not f then return print("[PropMLIB] Failed to save mesh thumbnail") end
 	
 	f:Write( data )
 	f:Close()
 	
-	QUBELib.Thumbnail.ThumbnailsCache[path] = nil
+	PropMLIB.Thumbnail.ThumbnailsCache[path] = nil
 end
 
-QUBELib.Thumbnail.Initialize = function()
-	local files, directories = file.Find("qube_mesh/thumbnails/*.jpg", "DATA")
+PropMLIB.Thumbnail.Initialize = function()
+	local files, directories = file.Find("prop_mesh/thumbnails/*.jpg", "DATA")
 	
-	QUBELib.Thumbnail.ThumbnailsCache = {}
+	PropMLIB.Thumbnail.ThumbnailsCache = {}
 	for _, v in pairs(files) do
-		QUBELib.Thumbnail.ThumbnailsCache["qube_mesh/thumbnails/" .. v] = true
+		PropMLIB.Thumbnail.ThumbnailsCache["prop_mesh/thumbnails/" .. v] = true
 	end
 end
 
-QUBELib.Thumbnail.HasThumbnail = function(name)
+PropMLIB.Thumbnail.HasThumbnail = function(name)
 	local fileName = util.CRC(name) .. ".jpg"
-	return QUBELib.Thumbnail.ThumbnailsCache[fileName]
+	return PropMLIB.Thumbnail.ThumbnailsCache[fileName]
 end
 
-QUBELib.Thumbnail.DeleteThumbnail = function(name)
+PropMLIB.Thumbnail.DeleteThumbnail = function(name)
 	local fileName = util.CRC(name) .. ".jpg"
-	local path = "qube_mesh/thumbnails/" .. fileName
+	local path = "prop_mesh/thumbnails/" .. fileName
 	if not file.Exists(path, "DATA" ) then return end
 	
 	file.Delete(path)
-	QUBELib.Thumbnail.ThumbnailsCache[path] = nil
+	PropMLIB.Thumbnail.ThumbnailsCache[path] = nil
 end
 
-QUBELib.Thumbnail.RemoveHook = function()
-	hook.Remove("PostDrawViewModel", "__qube_mesh_screenshot__")
+PropMLIB.Thumbnail.RemoveHook = function()
+	hook.Remove("PostDrawViewModel", "__prop_mesh_screenshot__")
 end
 
-QUBELib.Thumbnail.ClearHook = function()
-	QUBELib.Thumbnail.TakingScreenshot = false
-	QUBELib.Thumbnail.RemoveHook()
+PropMLIB.Thumbnail.ClearHook = function()
+	PropMLIB.Thumbnail.TakingScreenshot = false
+	PropMLIB.Thumbnail.RemoveHook()
 end
 
-QUBELib.Thumbnail.ScreenshotDrawHook = function(data)
-	hook.Add("PostDrawViewModel", "__qube_mesh_screenshot__", function()
-		if not QUBELib.Thumbnail.TakingScreenshot then return QUBELib.Thumbnail.ClearHook() end
-		if not data or not IsValid(data.ent) then return QUBELib.Thumbnail.ClearHook() end
+PropMLIB.Thumbnail.ScreenshotDrawHook = function(data)
+	hook.Add("PostDrawViewModel", "__prop_mesh_screenshot__", function()
+		if not PropMLIB.Thumbnail.TakingScreenshot then return PropMLIB.Thumbnail.ClearHook() end
+		if not data or not IsValid(data.ent) then return PropMLIB.Thumbnail.ClearHook() end
 		
 		local thumbnailData = nil
-		render.PushRenderTarget( QUBELib.Thumbnail.RTTexture )
+		render.PushRenderTarget( PropMLIB.Thumbnail.RTTexture )
 			cam.Start3D( data.origin, data.angles, data.fov )
 				render.Clear( 35, 35, 35, 255, true )
 				
@@ -104,15 +104,15 @@ QUBELib.Thumbnail.ScreenshotDrawHook = function(data)
 		render.PopRenderTarget()
 		
 		if thumbnailData then
-			QUBELib.Thumbnail.SaveThumbnail(data.uri, thumbnailData)
+			PropMLIB.Thumbnail.SaveThumbnail(data.uri, thumbnailData)
 		end
 		
-		QUBELib.Thumbnail.ClearHook()
+		PropMLIB.Thumbnail.ClearHook()
 	end)
 end
 
-QUBELib.Thumbnail.Initialize()
+PropMLIB.Thumbnail.Initialize()
 
-concommand.Add( "qube_thumbnail_clear", function()
-	QUBELib.Thumbnail.Clear()
+concommand.Add( "prop_mesh_thumbnail_clear", function()
+	PropMLIB.Thumbnail.Clear()
 end, nil, "Clears thumbnail cache")

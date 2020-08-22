@@ -13,39 +13,39 @@ local string_find = string.find
 local string_explode = string.Explode
 local string_replace = string.Replace
 
-QUBELib = QUBELib or {}
-QUBELib.Obj = QUBELib.Obj or {}
-QUBELib.Obj.Cache = QUBELib.Obj.Cache or {}
-QUBELib.Obj.MAX_SUBMESHES = GetConVar( "qube_maxSubMeshes" )
-QUBELib.Obj.MAX_SAFE_VERTICES = GetConVar( "qube_maxVertices" )
+PropMLIB = PropMLIB or {}
+PropMLIB.Obj = PropMLIB.Obj or {}
+PropMLIB.Obj.Cache = PropMLIB.Obj.Cache or {}
+PropMLIB.Obj.MAX_SUBMESHES = GetConVar( "prop_mesh_maxSubMeshes" )
+PropMLIB.Obj.MAX_SAFE_VERTICES = GetConVar( "prop_mesh_maxVertices" )
 
-QUBELib.Obj.IsCached = function(uri)
-	local cache = QUBELib.Obj.Cache[uri]
+PropMLIB.Obj.IsCached = function(uri)
+	local cache = PropMLIB.Obj.Cache[uri]
 	return (cache and cache ~= nil)
 end
 
-QUBELib.Obj.Clear = function()
-	QUBELib.Obj.Cache = {}
+PropMLIB.Obj.Clear = function()
+	PropMLIB.Obj.Cache = {}
 	
 	if SERVER then
-		print("[QUBELib][Server] Cleared obj model cache, sending to clients")
-		net.Start("qube_mesh_lib")
+		print("[PropMLIB][Server] Cleared obj model cache, sending to clients")
+		net.Start("prop_mesh_lib")
 			net.WriteString("OBJ_CACHE_CLEANUP")
 		net.Broadcast()
 	else
-		print("[QUBELib] Cleared obj model cache")
+		print("[PropMLIB] Cleared obj model cache")
 	end
 end
 
-QUBELib.Obj.UnRegister = function(uri)
-	QUBELib.Obj.Cache[uri] = nil
+PropMLIB.Obj.UnRegister = function(uri)
+	PropMLIB.Obj.Cache[uri] = nil
 end
 
-QUBELib.Obj.Register = function(uri, meshData)
-	QUBELib.Obj.Cache[uri] = meshData
+PropMLIB.Obj.Register = function(uri, meshData)
+	PropMLIB.Obj.Cache[uri] = meshData
 end
 
-QUBELib.Obj.GetScaledTris = function(subMeshData, scale)
+PropMLIB.Obj.GetScaledTris = function(subMeshData, scale)
 	local triCopy = table_copy(subMeshData)
 	
 	for i = 1, #triCopy do
@@ -57,7 +57,7 @@ end
 
 if CLIENT then
 	-- Based on PAC
-	QUBELib.Obj.CalculateNormals = function(triangleList)
+	PropMLIB.Obj.CalculateNormals = function(triangleList)
 		local coroutine_yield = coroutine.running() and coroutine.yield or function() end
 		
 		local vertexNormals = {}
@@ -97,7 +97,7 @@ if CLIENT then
 	end
 	
 	-- Based on PAC
-	QUBELib.Obj.CalculateTangents = function(triangleList)
+	PropMLIB.Obj.CalculateTangents = function(triangleList)
 		local coroutine_yield = coroutine.running() and coroutine.yield or function() end
 		
 		do
@@ -168,7 +168,7 @@ if CLIENT then
 	end
 	
 	-- Based on PAC	
-	QUBELib.Obj.CalculateFaces = function(faceLines, globalMesh)	
+	PropMLIB.Obj.CalculateFaces = function(faceLines, globalMesh)	
 		local coroutine_yield = coroutine.running() and coroutine.yield or function () end	
 
 		local faceLineCount = #faceLines	
@@ -246,7 +246,7 @@ if CLIENT then
 		return triangleList	
 	end	
 
-	QUBELib.Obj.NewSubMesh = function(name)
+	PropMLIB.Obj.NewSubMesh = function(name)
 		return {
 			mtl = 'default',
 			
@@ -259,7 +259,7 @@ end
 
 -- ID: newmtl None
 -- TEXTURE: map_Kd Sheep_VertColor.png
-QUBELib.Obj.ParseMTL = function(baseURL, body)
+PropMLIB.Obj.ParseMTL = function(baseURL, body)
 	local parsedData = {}
 	local rawData = string_split(body, "\n")
 	
@@ -288,7 +288,7 @@ QUBELib.Obj.ParseMTL = function(baseURL, body)
 	return parsedData
 end
 
-QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
+PropMLIB.Obj.Parse = function(isAdmin, body, fixNormals)
 	local coroutine_yield = coroutine.running() and coroutine.yield or function () end
 	local fixNormals = (fixNormals ~= nil and fixNormals or true)
 	
@@ -360,10 +360,10 @@ QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 				subMeshes[#subMeshes].faceLines[#subMeshes[#subMeshes].faceLines + 1] = parts
 			elseif mode == "o" then -- OBJECT
 				local name = tostring(data[2]) or ("obj_" .. #subMeshes)
-				local maxSubMeshes = QUBELib.Obj.MAX_SUBMESHES:GetInt()
+				local maxSubMeshes = PropMLIB.Obj.MAX_SUBMESHES:GetInt()
 				
 				if #subMeshes < maxSubMeshes or isAdmin then
-					table_insert(subMeshes, QUBELib.Obj.NewSubMesh(name))
+					table_insert(subMeshes, PropMLIB.Obj.NewSubMesh(name))
 				end
 			elseif mode == "usemtl" then -- MATERIAL ID
 				subMeshes[#subMeshes].mtl = tostring(data[2])
@@ -399,7 +399,7 @@ QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 		end
 		
 		local parsedSubMeshes = {}
-		local maxVertices = QUBELib.Obj.MAX_SAFE_VERTICES:GetInt()
+		local maxVertices = PropMLIB.Obj.MAX_SAFE_VERTICES:GetInt()
 		
 		for _, objMesh in pairs(subMeshes) do
 			if not isAdmin then
@@ -408,10 +408,10 @@ QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 				end
 			end
 			
-			local tris = QUBELib.Obj.CalculateFaces(objMesh.faceLines, globalMesh)
+			local tris = PropMLIB.Obj.CalculateFaces(objMesh.faceLines, globalMesh)
 			if fixNormals then
-				QUBELib.Obj.CalculateNormals(tris)
-				QUBELib.Obj.CalculateTangents(tris)
+				PropMLIB.Obj.CalculateNormals(tris)
+				PropMLIB.Obj.CalculateTangents(tris)
 			end
 			
 			tris.name = objMesh.name
@@ -440,6 +440,6 @@ QUBELib.Obj.Parse = function(isAdmin, body, fixNormals)
 	end
 end
 
-concommand.Add( "qube_objcache_clear", function()
-	QUBELib.Obj.Clear()
+concommand.Add( "prop_mesh_objcache_clear", function()
+	PropMLIB.Obj.Clear()
 end, nil, "Clears all cached models")

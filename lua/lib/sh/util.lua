@@ -2,11 +2,11 @@ local math_round = math.Round
 local math_clamp_ = math.Clamp
 local math_huge = math.huge
 
-QUBELib = QUBELib or {}
-QUBELib.Util = QUBELib.Util or {}
+PropMLIB = PropMLIB or {}
+PropMLIB.Util = PropMLIB.Util or {}
 
 -- Taken from metastruct, cus im lazy --
-QUBELib.Util.NiceSize = function(size)
+PropMLIB.Util.NiceSize = function(size)
 	size = tonumber( size )
 	
 	if ( size <= 0 ) then return "0" end
@@ -17,28 +17,28 @@ QUBELib.Util.NiceSize = function(size)
 	return math_round( size / ( 1000 * 1000 * 1000 ), 2 ) .. " GB"
 end
 
-QUBELib.Util.SafeVector = function(vec, negative)
+PropMLIB.Util.SafeVector = function(vec, negative)
 	if not vec then 
 		if negative then return Vector(-1, -1, -1)
 		else return Vector(1, 1, 1) end
 	end
 	
-	if not QUBELib.Util.IsFinite(vec.x) then
+	if not PropMLIB.Util.IsFinite(vec.x) then
 		if negative then vec.x = -1 else vec.x = 1 end
 	end
 	
-	if not QUBELib.Util.IsFinite(vec.y) then 
+	if not PropMLIB.Util.IsFinite(vec.y) then 
 		if negative then vec.y = -1 else vec.y = 1 end
 	end
 	
-	if not QUBELib.Util.IsFinite(vec.z) then
+	if not PropMLIB.Util.IsFinite(vec.z) then
 		if negative then vec.z = -1 else vec.z = 1 end
 	end
 	
 	return vec
 end
 
-QUBELib.Util.ClampVector = function(vec, min, max)
+PropMLIB.Util.ClampVector = function(vec, min, max)
 	if not vec then vec = Vector(0, 0, 0) end
 	
 	if not min then min = 0 end
@@ -51,21 +51,21 @@ QUBELib.Util.ClampVector = function(vec, min, max)
 	return vec
 end
 
-QUBELib.Util.IsFinite = function(x)
-	if not x or QUBELib.Util.IsNan(x) then return false end
+PropMLIB.Util.IsFinite = function(x)
+	if not x or PropMLIB.Util.IsNan(x) then return false end
 	if x == math_huge then return false end
 	if x == -math_huge then return false end
 	
 	return true
 end
 
-QUBELib.Util.IsNan = function(x)
+PropMLIB.Util.IsNan = function(x)
 	return x ~= x
 end
 
 --- From PAC3 (Thanks! :D) ---
 --- https://github.com/CapsAdmin/pac3/blob/97ab99e9e8f5f16063ee5480ee33d21970822b8c/lua/pac3/core/shared/http.lua
-QUBELib.Util.FixUrl = function(url)
+PropMLIB.Util.FixUrl = function(url)
 	url = url:Trim()
 
 	if url:find("dropbox", 1, true) then

@@ -1,10 +1,10 @@
-util.AddNetworkString("qube_mesh_command" )
-util.AddNetworkString("qube_mesh_lib" )
+util.AddNetworkString("prop_mesh_command" )
+util.AddNetworkString("prop_mesh_lib" )
 
 duplicator.RegisterEntityModifier( "SAVE_DATA", function(ply, ent, data)
-	if not IsValid(ply) or not ply:CheckLimit("qube_mesh") then return ent:Remove() end
-	ply:AddCount("qube_mesh", ent)
-	ply:AddCleanup("qube_mesh", ent)
+	if not IsValid(ply) or not ply:CheckLimit("prop_mesh") then return ent:Remove() end
+	ply:AddCount("prop_mesh", ent)
+	ply:AddCleanup("prop_mesh", ent)
 			
 	if not IsValid(ent) or not data.meshURL then return end
 	if not ent.Load then return end
@@ -16,7 +16,7 @@ duplicator.RegisterEntityModifier( "SAVE_DATA", function(ply, ent, data)
 	end)
 end)
 
-net.Receive("qube_mesh_command", function( len, ply )
+net.Receive("prop_mesh_command", function( len, ply )
 	if not IsValid(ply) or not ply:IsPlayer() then return end
 	local command = net.ReadString()
 	

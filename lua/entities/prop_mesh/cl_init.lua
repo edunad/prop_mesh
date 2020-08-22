@@ -13,13 +13,13 @@ local math_rand = math.Rand
 ----------------
 --- SETTINGS ---
 ENT.AutomaticFrameAdvance = true
-ENT.DEFAULT_MATERIAL = CreateMaterial( "QUBE_DEFAULT_MATERIAL", "UnlitGeneric", {
+ENT.DEFAULT_MATERIAL = CreateMaterial( "PROP_MESH_DEFAULT_MATERIAL", "UnlitGeneric", {
 	["$basetexture"] = "models/debug/debugwhite",
 	["$model"] = "1",
 	["$decal"] = "1"
 })
 
-ENT.DEFAULT_MATERIAL_PHYS = CreateMaterial( "QUBE_DEFAULT_MATERIAL_PHYS", "UnlitGeneric", {
+ENT.DEFAULT_MATERIAL_PHYS = CreateMaterial( "PROP_MESH_DEFAULT_MATERIAL_PHYS", "UnlitGeneric", {
 	["$basetexture"] = "models/debug/debugwhite",
 	["$model"] = "1",
 	["$decal"] = "1"
@@ -28,7 +28,7 @@ ENT.DEFAULT_MATERIAL_PHYS = CreateMaterial( "QUBE_DEFAULT_MATERIAL_PHYS", "Unlit
 ENT.DEFAULT_MATERIAL:SetVector("$color2", Vector(0, 0, 0))
 ENT.DEFAULT_MATERIAL_PHYS:SetVector("$color2", Vector(1, 1, 1))
 
-ENT.DEBUG_MATERIAL = CreateMaterial( "QUBE_DEFAULT_MATERIAL_WIREFRAME", "Wireframe", {
+ENT.DEBUG_MATERIAL = CreateMaterial( "PROP_MESH_DEFAULT_MATERIAL_WIREFRAME", "Wireframe", {
 	["$basetexture"] = "models/wireframe",
 	["$model"] = "1",
 	["$vertexalpha"] = "1",
@@ -57,9 +57,9 @@ ENT.__LOADED_TEXTURES__ = false
 ENT.__PHYSICS_BOX__ = nil
 ----
 
-language.Add( "SBoxLimit_qube_mesh", "You have hit the qube_mesh limit!" )
+language.Add( "SBoxLimit_prop_mesh", "You have hit the prop_mesh limit!" )
 
-surface.CreateFont( "QUBE_DEBUGFIXED", {
+surface.CreateFont( "PROP_MESH_DEBUGFIXED", {
 	font		= "DebugFixedSmall",
 	size		= ScreenScale(6),
 	weight		= 200
@@ -96,7 +96,7 @@ function ENT:LoadTextures(textures)
 			continue
 		end
 		
-		QUBELib.URLMaterial.LoadMaterialURL(QUBELib.Util.FixUrl(v), function()
+		PropMLIB.URLMaterial.LoadMaterialURL(PropMLIB.Util.FixUrl(v), function()
 			return onDone()
 		end, function()
 			return onDone()
@@ -120,7 +120,7 @@ function ENT:BuildIMesh(meshData)
 	self.__LOADED_MESH__ = false
 	
 	-- Prevent crashing players if spammed --
-	QUBELib.QueueSYS.Register({
+	PropMLIB.QueueSYS.Register({
 		callback = function()
 			if not IsValid(self) then return end
 			self:ClearMeshes()
@@ -133,7 +133,7 @@ function ENT:BuildIMesh(meshData)
 			
 			self:SetRenderBounds( minOBB, maxOBB )
 			for _, v in pairs(meshData.subMeshes) do
-				local scaledTris = QUBELib.Obj.GetScaledTris(v, safeScale)
+				local scaledTris = PropMLIB.Obj.GetScaledTris(v, safeScale)
 				local msh = Mesh()
 				
 				msh:BuildFromTriangles(scaledTris)
@@ -166,7 +166,7 @@ function ENT:MeshComplete()
 end
 
 function ENT:ClearMeshes()
-	QUBELib.MeshParser.ClearMeshes(self.MESH_MODELS)
+	PropMLIB.MeshParser.ClearMeshes(self.MESH_MODELS)
 	self.MESH_MODELS = {}
 end
 
@@ -187,7 +187,7 @@ function ENT:LocalLoadMesh(requestData)
 		self:SetStatus("Done")
 		self:BuildMeshes(meshData)
 	end, function(err)
-		print("[Qube]"..err)
+		print("[prop_mesh]"..err)
 		if not IsValid(self) then return end
 		
 		self:SetModelErrored(true)
@@ -201,7 +201,7 @@ function ENT:RetryModelParse()
 	local lastMesh = self.LAST_REQUESTED_MESH
 	if not lastMesh then return end
 	
-	QUBELib.Obj.UnRegister(lastMesh.uri) -- Uncache it
+	PropMLIB.Obj.UnRegister(lastMesh.uri) -- Uncache it
 	self:LocalLoadMesh(lastMesh)
 end
 --- MESH ---
@@ -217,8 +217,8 @@ function ENT:GetModelMaterial(index, DebugMode)
 	
 	local mat = self.DEFAULT_MATERIAL
 	if self.MATERIAL_URLS and self.MATERIAL_URLS[index] then
-		if QUBELib.URLMaterial.Materials[self.MATERIAL_URLS[index]] then
-			mat = QUBELib.URLMaterial.Materials[self.MATERIAL_URLS[index]]
+		if PropMLIB.URLMaterial.Materials[self.MATERIAL_URLS[index]] then
+			mat = PropMLIB.URLMaterial.Materials[self.MATERIAL_URLS[index]]
 		end
 	end
 	
@@ -270,7 +270,7 @@ end
 --- DRAWING ---
 function ENT:DrawTranslucent()
 	local DebugMode = (self.GetDebug and self:GetDebug())
-	if QUBELib.Thumbnail.TakingScreenshot then DebugMode = false end
+	if PropMLIB.Thumbnail.TakingScreenshot then DebugMode = false end
 	
 	if not self.LOADED_MESH then
 		local minOBB, maxOBB = self:GetRenderBounds()
@@ -302,6 +302,7 @@ function ENT:DrawDEBUGBoxes()
 	
 	render.SetMaterial( self.DEFAULT_MATERIAL_PHYS )
 	render.DrawBox( pos, ang, minPOBB, maxPOBB, Color(255, 255, 255, 255), true)
+	render.DrawWireframeBox( pos, ang, minPOBB, maxPOBB, Color(1, 1, 1, 255), true)
 end
 
 function ENT:DrawDEBUGInfo()
@@ -315,8 +316,8 @@ function ENT:DrawDEBUGInfo()
 		cam.Start3D2D( TexVec, TexAng, 0.1)
 			render.PushFilterMag(TEXFILTER.POINT)
 			render.PushFilterMin(TEXFILTER.POINT)
-				draw.SimpleTextOutlined( #meshData.subMeshes .. " MESHES", "QUBE_DEBUGFIXED", 0, 0, Color( 255, 255, 255, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_RIGHT, 1, Color(1,1,1))
-				draw.SimpleTextOutlined( meshData.metadata.fileSize , "QUBE_DEBUGFIXED", 0, 20, Color( 255, 255, 255, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_RIGHT, 1, Color(1,1,1))
+				draw.SimpleTextOutlined( #meshData.subMeshes .. " MESHES", "PROP_MESH_DEBUGFIXED", 0, 0, Color( 255, 255, 255, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_RIGHT, 1, Color(1,1,1))
+				draw.SimpleTextOutlined( meshData.metadata.fileSize , "PROP_MESH_DEBUGFIXED", 0, 20, Color( 255, 255, 255, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_RIGHT, 1, Color(1,1,1))
 			render.PopFilterMag()
 			render.PopFilterMin()
 		cam.End3D2D()
@@ -325,7 +326,7 @@ function ENT:DrawDEBUGInfo()
 		cam.Start3D2D( TexVec2, TexAng2, 0.1)
 			for k, v in pairs(meshData.subMeshes) do
 				local color = self.DEBUG_MATERIALS_COLORS[k] or Vector(0, 0, 0)
-				draw.SimpleTextOutlined( k ..": ".. v.name , "QUBE_DEBUGFIXED", 0,  k * 18 - ((#meshData.subMeshes + 1) * 19), Color(color[1] * 255,color[2] * 255, color[3] * 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_LEFT, 1, Color(1, 1, 1))
+				draw.SimpleTextOutlined( k ..": ".. v.name , "PROP_MESH_DEBUGFIXED", 0,  k * 18 - ((#meshData.subMeshes + 1) * 19), Color(color[1] * 255,color[2] * 255, color[3] * 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_LEFT, 1, Color(1, 1, 1))
 			end
 		cam.End3D2D()	
 	end
@@ -344,7 +345,7 @@ function ENT:DrawLOGO()
 	cam.Start3D2D(pos, ang, 0.5)
 		render.PushFilterMag(TEXFILTER.POINT)
 		render.PushFilterMin(TEXFILTER.POINT)
-			draw.DrawText( "QUBE", "TargetID", 0, -1, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER )
+			draw.DrawText( "PROP", "TargetID", 0, -1, Color( 255, 255, 255, 255 ), TEXT_ALIGN_CENTER )
 		render.PopFilterMag()
 		render.PopFilterMin()
 	cam.End3D2D()
@@ -416,7 +417,7 @@ function ENT:GetRenderMesh()
 	if not initialMesh or initialMesh == NULL then return end
 	
 	local DebugMode = self.GetDebug and self:GetDebug()
-	if QUBELib.Thumbnail.TakingScreenshot then DebugMode = false end
+	if PropMLIB.Thumbnail.TakingScreenshot then DebugMode = false end
 	
 	local mat = self:GetModelMaterial(1, DebugMode)
 	if DebugMode then
@@ -453,7 +454,7 @@ function ENT:TakeScreenshot()
 	
 	local ViewPos, ViewAngle = LocalToWorld(Vector(maxOBB.z - size, (maxOBB.y + minOBB.y) / 2, 0), Angle(0, 0, -90), OPos, OAngle)
 	
-	QUBELib.Thumbnail.TakeThumbnail({
+	PropMLIB.Thumbnail.TakeThumbnail({
 		ent = self,
 		uri = loadedMesh.uri,
 		origin = ViewPos,
@@ -481,7 +482,7 @@ function ENT:CreateHelpers(props)
 	else meshDebug:SetValue(false) end
 	
 	meshDebug.DataChanged = function( _, val )
-		net.Start("qube_mesh_command")
+		net.Start("prop_mesh_command")
 			net.WriteString("SET_DEBUG")
 			net.WriteEntity(self)
 			net.WriteBool((val == 1))
@@ -497,7 +498,7 @@ function ENT:CreateHelpers(props)
 	else meshFullbright:SetValue(false) end
 	
 	meshFullbright.DataChanged = function( _, val )
-		net.Start("qube_mesh_command")
+		net.Start("prop_mesh_command")
 			net.WriteString("SET_FULLBRIGHT")
 			net.WriteEntity(self)
 			net.WriteBool((val == 1))
@@ -585,8 +586,8 @@ function ENT:CreateMeshMenu()
 		
 		showCheckboxText = true
 		
-		timer.Destroy("__qube_reset_ok__")
-		timer.Create("__qube_reset_ok__", 1, 1, function() 
+		timer.Destroy("__prop_mesh_reset_ok__")
+		timer.Create("__prop_mesh_reset_ok__", 1, 1, function() 
 			showCheckboxText = false
 		end)
 	end
@@ -671,7 +672,7 @@ function ENT:PreFetchMTL(uri, onComplete)
 end
 
 function ENT:MapMTLTexture(uri, onComplete)
-	uri = QUBELib.Util.FixUrl(uri) -- Quick fix
+	uri = PropMLIB.Util.FixUrl(uri) -- Quick fix
 	
 	self:PreFetchMTL(uri, function(err, dataSize)
 		if err then return onComplete(err) end
@@ -690,7 +691,7 @@ function ENT:MapMTLTexture(uri, onComplete)
 			success = function(code, body, headers)
 				if not body or string_trim(body) == "" then return onComplete("!! Invalid MTL url !!") end
 			
-				local data = QUBELib.Obj.ParseMTL(baseUrl, body)
+				local data = PropMLIB.Obj.ParseMTL(baseUrl, body)
 				if not data or table_count(data) <= 0 then return onComplete("!! Invalid MTL file !!") end
 
 				local meshData = self.LOADED_MESH
@@ -733,13 +734,13 @@ function ENT:CreateMTLMapper(parent)
 	local lastError = nil
 	local isLoading = false
 	local onError = function(err)
-		print("[Qube]"..err)
+		print("[prop_mesh]"..err)
 		
 		lastError = err
 		surface.PlaySound( "buttons/button8.wav" )
 		
-		timer.Destroy("__qube_reset_err__")
-		timer.Create("__qube_reset_err__", 2, 1, function()
+		timer.Destroy("__prop_mesh_reset_err__")
+		timer.Create("__prop_mesh_reset_err__", 2, 1, function()
 			lastError = nil
 		end)
 	end
@@ -800,7 +801,7 @@ end
 ---  MTL  ---
 -------------
 function ENT:CreateTextureMenu()
-	local maxMaterials = QUBELib.Obj.MAX_SUBMESHES:GetInt()
+	local maxMaterials = PropMLIB.Obj.MAX_SUBMESHES:GetInt()
 	if LocalPlayer():IsAdmin() then
 		maxMaterials = 20
 	end
@@ -832,7 +833,7 @@ function ENT:RemoveHistory(uri)
 end
 
 function ENT:SaveHistory()
-	file.Write( "qube_mesh/__saved_meshes.json", util.TableToJSON( self.HISTORY_MESHES ) )
+	file.Write( "prop_mesh/__saved_meshes.json", util.TableToJSON( self.HISTORY_MESHES ) )
 	self:GenerateSpawnIcons() -- Re-generate it
 end
 
@@ -845,9 +846,9 @@ function ENT:AddHistory(addData)
 end
 
 function ENT:LoadHistory()
-	if not file.Exists("qube_mesh/__saved_meshes.json", "DATA") then return end
+	if not file.Exists("prop_mesh/__saved_meshes.json", "DATA") then return end
 	
-	local rawHistory = file.Read("qube_mesh/__saved_meshes.json")
+	local rawHistory = file.Read("prop_mesh/__saved_meshes.json")
 	self.HISTORY_MESHES = util.JSONToTable( rawHistory )
 end
 
@@ -863,7 +864,7 @@ function ENT:CreateSpawnIcon(uri, panel, iconLayout, onClick, onRightClick)
 	button:SetSize( 128, 128 )
 	button:SetTooltip(uri)
 	
-	local matTest = self:CreateButtonMaterial("../data/qube_mesh/thumbnails/" .. util.CRC(uri) .. ".jpg")
+	local matTest = self:CreateButtonMaterial("../data/prop_mesh/thumbnails/" .. util.CRC(uri) .. ".jpg")
 	button:SetMaterial( matTest )
 	button.DoClick = function()
 		return onClick(uri)
@@ -889,6 +890,10 @@ function ENT:CreateHistoryMenu()
 	self.UI.SHEET:AddSheet( "Saved Meshes", self.UI.HISTORYPANEL, "icon16/book_addresses.png" )
 	
 	local scroll = vgui.Create( "DScrollPanel", self.UI.HISTORYPANEL) -- Create the Scroll panel
+	scroll.Paint = function(self, w, h)
+		surface.SetDrawColor( Color(1, 1, 1) )
+		surface.DrawRect( 0, 0, w , h )
+	end
 	scroll:Dock( FILL )
 	
 	self.UI.ICONLIST = vgui.Create( "DIconLayout", scroll )
@@ -896,10 +901,7 @@ function ENT:CreateHistoryMenu()
 	self.UI.ICONLIST:SetSpaceY( 5 )
 	self.UI.ICONLIST:SetSpaceX( 5 )
 	self.UI.ICONLIST:Layout()
-	self.UI.ICONLIST.Paint = function(self, w, h)
-		surface.SetDrawColor( Color(1, 1, 1) )
-		surface.DrawRect( 0, 0, w , h )
-	end
+
 	
 	self:GenerateSpawnIcons()
 end
@@ -921,7 +923,7 @@ end
 function ENT:UILoadData(data)
 	surface.PlaySound( "garrysmod/ui_click.wav" )
 	
-	net.Start("qube_mesh_command")
+	net.Start("prop_mesh_command")
 		net.WriteString("UPDATE_MESH")
 		net.WriteEntity(self)
 		net.WriteTable(data)
@@ -1003,7 +1005,7 @@ function ENT:CreateMenu()
 	
 	self.UI.PANEL = vgui.Create( "DFrame" )
 	self.UI.PANEL:SetSize( 568, 400 )
-	self.UI.PANEL:SetTitle( "QUBE - Settings Menu" )
+	self.UI.PANEL:SetTitle( "prop_mesh - Settings Menu" )
 	self.UI.PANEL:SetDraggable( true )
 	self.UI.PANEL:Center()
 	self.UI.PANEL:MakePopup()
@@ -1034,11 +1036,11 @@ function ENT:CreateMenu()
 		local texts = {}
 		for _, v in pairs(self.UI.TextureRows) do
 			if not v or not v.uriText then continue end
-			table_insert(texts, QUBELib.Util.FixUrl(v.uriText:GetValue()))
+			table_insert(texts, PropMLIB.Util.FixUrl(v.uriText:GetValue()))
 		end
 		
 		local data = {
-			uri = QUBELib.Util.FixUrl(elements.uri:GetValue()),
+			uri = PropMLIB.Util.FixUrl(elements.uri:GetValue()),
 			scale = Vector(elements.scale[1]:GetValue(), elements.scale[2]:GetValue(), elements.scale[3]:GetValue()),
 			phys = Vector(elements.phys[1]:GetValue(), elements.phys[2]:GetValue(), elements.phys[3]:GetValue()),
 			textures = self:SanitizeTextures(texts)

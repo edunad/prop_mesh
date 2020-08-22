@@ -1,11 +1,11 @@
-net.Receive("qube_mesh_lib", function()
+net.Receive("prop_mesh_lib", function()
 	local command = net.ReadString()
 	if command == "OBJ_CACHE_CLEANUP" then
-		QUBELib.Obj.Clear()
+		PropMLIB.Obj.Clear()
 	end
 end)
 
-net.Receive("qube_mesh_command", function()
+net.Receive("prop_mesh_command", function()
 	local indx = net.ReadInt(32)
 	local ent = Entity(indx)
 	local command = net.ReadString()
@@ -14,7 +14,7 @@ net.Receive("qube_mesh_command", function()
 		local data = net.ReadTable()
 		
 		if not IsValid(ent) then
-			return QUBELib.PVSCache.CacheNetMessage(indx, command, function(newEnt)
+			return PropMLIB.PVSCache.CacheNetMessage(indx, command, function(newEnt)
 				if not newEnt.LocalLoadMesh then return end
 				newEnt:LocalLoadMesh(data)
 			end)
@@ -26,7 +26,7 @@ net.Receive("qube_mesh_command", function()
 		local textures = net.ReadTable()
 		
 		if not IsValid(ent) then
-			return QUBELib.PVSCache.CacheNetMessage(indx, command, function(newEnt)
+			return PropMLIB.PVSCache.CacheNetMessage(indx, command, function(newEnt)
 				if not newEnt.LoadTextures then return end
 				newEnt:LoadTextures(textures)
 			end)
@@ -38,7 +38,7 @@ net.Receive("qube_mesh_command", function()
 		local phys = net.ReadVector()
 		
 		if not IsValid(ent) then
-			return QUBELib.PVSCache.CacheNetMessage(indx, command, function(newEnt)
+			return PropMLIB.PVSCache.CacheNetMessage(indx, command, function(newEnt)
 				if not newEnt.SetPhysScale then return end
 				newEnt:SetPhysScale(phys)
 			end)
@@ -50,7 +50,7 @@ net.Receive("qube_mesh_command", function()
 		local errored = net.ReadBool()
 		
 		if not IsValid(ent) then
-			return QUBELib.PVSCache.CacheNetMessage(indx, command, function(newEnt)
+			return PropMLIB.PVSCache.CacheNetMessage(indx, command, function(newEnt)
 				if not newEnt.SetModelErrored then return end
 				newEnt:SetModelErrored(errored)
 			end)
@@ -62,7 +62,7 @@ net.Receive("qube_mesh_command", function()
 		local scale = net.ReadVector()
 		
 		if not IsValid(ent) then
-			return QUBELib.PVSCache.CacheNetMessage(indx, command, function(newEnt)
+			return PropMLIB.PVSCache.CacheNetMessage(indx, command, function(newEnt)
 				if not newEnt.SetScale then return end
 				newEnt:SetScale(scale)
 			end)

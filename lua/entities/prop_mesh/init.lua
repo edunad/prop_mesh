@@ -12,10 +12,10 @@ ENT.SAVE_DATA = {}
 
 --------------
 --- Spawn ----
-local function MakeQUBEEnt(ply, data)
-	if IsValid(ply) and not ply:CheckLimit("qube_mesh") then return nil end
+local function MakePMESHEnt(ply, data)
+	if IsValid(ply) and not ply:CheckLimit("prop_mesh") then return nil end
 	
-	local ent = ents.Create("qube_mesh")
+	local ent = ents.Create("prop_mesh")
 	if not ent:IsValid() then return nil end
 	
 	ent:SetPos(data.Pos)
@@ -30,8 +30,8 @@ local function MakeQUBEEnt(ply, data)
 	ent:Activate()
 	
 	if IsValid(ply) then
-		ply:AddCount("qube_mesh", ent)
-		ply:AddCleanup("qube_mesh", ent)
+		ply:AddCount("prop_mesh", ent)
+		ply:AddCleanup("prop_mesh", ent)
 	end
 	
 	return ent
@@ -41,7 +41,7 @@ function ENT:SpawnFunction( ply, tr )
 	if (not tr.Hit) then return end
 	
 	local SpawnPos = tr.HitPos + tr.HitNormal * 16
-	return MakeQUBEEnt(ply, {Pos=SpawnPos})
+	return MakePMESHEnt(ply, {Pos=SpawnPos})
 end
 --- Spawn ----
 --------------
@@ -58,7 +58,7 @@ function ENT:SendLoadedMesh(ply)
 end
 
 function ENT:SendLoadMesh(data, ply)
-	net.Start("qube_mesh_command")
+	net.Start("prop_mesh_command")
 		net.WriteInt(self:EntIndex(), 32)
 		net.WriteString("MESH_LOAD")
 		net.WriteTable(data)
@@ -80,7 +80,7 @@ function ENT:SetTextures(textures)
 end
 
 function ENT:SendTextures(textures, ply)
-	net.Start("qube_mesh_command")
+	net.Start("prop_mesh_command")
 	net.WriteInt(self:EntIndex(), 32)
 	net.WriteString("TEXTURE_LOAD")
 	net.WriteTable(textures)
@@ -103,7 +103,7 @@ end
 function ENT:Use(ply, caller)
 	if not IsValid(ply) then return end
 	
-	net.Start("qube_mesh_command")
+	net.Start("prop_mesh_command")
 		net.WriteInt(self:EntIndex(), 32)
 		net.WriteString("ON_USE_PRESS")
 	net.Send(ply)
@@ -124,9 +124,9 @@ function ENT:Load(uri, textures, scale, phys)
 	local isAdmin = owner:IsAdmin()
 	
 	-- FIX INPUT ---
-	scale = QUBELib.Util.ClampVector(scale or Vector(1, 1, 1), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
-	phys = QUBELib.Util.ClampVector(phys or Vector(1, 1, 1), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
-	uri = QUBELib.Util.FixUrl(uri)
+	scale = PropMLIB.Util.ClampVector(scale or Vector(1, 1, 1), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
+	phys = PropMLIB.Util.ClampVector(phys or Vector(1, 1, 1), self.MIN_SAFE_SCALE, self.MAX_SAFE_SCALE)
+	uri = PropMLIB.Util.FixUrl(uri)
 	----------
 
 	-- Adv dupe saving
