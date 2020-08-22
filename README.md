@@ -45,12 +45,12 @@ SHARED :
 - [ ] Split the mesh if triangles limit is high
 
 ### Entity
-- [ ] Fix Adv.dup constrains
+- [x] Fix Adv.dup constrains
 - [ ] Server / Client code improvements
 - [x] Add console commands to limit prop_mesh on client side
 - [x] Add console commands server side for admins
 - [ ] Handle server failing to parse model?
-- [X] Better UI Panel
+- [x] Better UI Panel
 
 ## LINKS
 - [Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2205982705)
