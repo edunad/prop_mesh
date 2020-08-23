@@ -92,8 +92,16 @@ PropMLIB.Util.FixUrl = function(url)
 		return url:gsub("^(https?://.-/.-/.-/)blob", "%1raw")
 	end
 
+	if url:find("github.com", 1, true) and url:find("/blob/", 1, true)  then
+		local id = url:match("https://github.com/(.-)$")
+		if id then
+			return "https://raw.githubusercontent.com/" ..  string.Replace(string.Replace(id, '/raw/', '/'),'/blob/', '/')
+		end
+
+	 	return url:gsub("github.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_]+)/blob/", "github.com/%1/%2/raw/")
+	end
+
 	url = url:gsub([[^http%://onedrive%.live%.com/redir?]],[[https://onedrive.live.com/download?]])
 	url = url:gsub("pastebin.com/([a-zA-Z0-9]*)$", "pastebin.com/raw.php?i=%1")
-	url = url:gsub("github.com/([a-zA-Z0-9_]+)/([a-zA-Z0-9_]+)/blob/", "github.com/%1/%2/raw/")
 	return url
 end

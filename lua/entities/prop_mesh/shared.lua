@@ -292,22 +292,35 @@ end
 ---  OBJ  ---
 function ENT:CheckOBJUri(uri, onComplete)
 	local allowedTypes = {"text/plain", "application/octet%-stream", "application/x%-tgif"}
-	
+
 	HTTP({
 		url = uri,
-		method = "HEAD",
+		method = "GET",
 		headers = {
-			["Range"] = "bytes=0-"
+			["Range"] = "bytes=0-1",
+			["Accept-Encoding"] = "none"
 		},
 		success = function(code, body, headers)
 			if not headers then return onComplete("!! Cannot PRE-FETCH model !!") end
 
-			local fileSize = headers["Content-Length"] or headers["content-length"]
-			if not fileSize then return onComplete("!! Failed to find 'Content-Length' header !!") end
+			local fileSize = nil
+			local fileRange = headers["Content-Range"] or headers["content-range"]
+
+			if fileRange then
+				local range = string.Explode('/', fileRange)
+				if not range or not range[2] then return onComplete("!! Failed to find 'Content-Range' header !!") end
+
+				fileSize = range[2]
+			else
+				if string.StartWith(uri, 'https://pastebin.com') then
+					fileSize = #body
+				else
+					return onComplete("!! Failed to find 'Content-Range' header !!")
+				end
+			end
 			
 			local fileType = headers["Content-Type"]
 			if not fileType then return onComplete("!! Failed to find 'Content-Type' header !!") end
-			
 			
 			local foundType = false
 			for _, v in pairs(allowedTypes) do
