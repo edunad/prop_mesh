@@ -50,7 +50,7 @@ end
 --- SEND ----
 function ENT:SendLoadedMesh(ply)
 	local lastMesh = self.LAST_REQUESTED_MESH
-	if not lastMesh then return end
+	if not lastMesh or not lastMesh.uri then return end
 	
 	-- SEND TEXTURES AND MESH --
 	self:SendTextures(self.MATERIAL_URLS, ply)
