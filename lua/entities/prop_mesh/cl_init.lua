@@ -511,7 +511,7 @@ end
 
 function ENT:CreateMeshMenu()
 	local meshPanel = vgui.Create( "DPanel", self.UI.SHEET )
-	self.UI.SHEET:AddSheet( "Mesh", meshPanel, "icon16/brick_edit.png" )
+	self.UI.SHEET:AddSheet( "Prop", meshPanel, "icon16/brick_edit.png" )
 	
 	local props = vgui.Create( "DProperties", meshPanel )
 	props:Dock( FILL )
@@ -533,7 +533,7 @@ function ENT:CreateMeshMenu()
 	----
 	
 	---- PHYSICS SCALE ---
-	local meshPhysReset = props:CreateRow( "Physics Scale", "Reset physics to scale" )
+	local meshPhysReset = props:CreateRow( "Physics Scale - !! Removes constrains if changed !!", "Reset physics to scale" )
 	meshPhysReset:Setup( "Boolean" )
 	meshPhysReset:SetValue( false )
 	
@@ -555,13 +555,13 @@ function ENT:CreateMeshMenu()
 		surface.DrawText( "Done!" )
 	end
 	
-	local meshPhysX = props:CreateRow( "Physics Scale", "Physics X" )
+	local meshPhysX = props:CreateRow( "Physics Scale - !! Removes constrains if changed !!", "Physics X" )
 	meshPhysX:Setup( "Float", { min = self.MIN_SAFE_SCALE, max = self.MAX_SAFE_SCALE } )
 	
-	local meshPhysY = props:CreateRow( "Physics Scale", "Physics Y" )
+	local meshPhysY = props:CreateRow( "Physics Scale - !! Removes constrains if changed !!", "Physics Y" )
 	meshPhysY:Setup( "Float", { min = self.MIN_SAFE_SCALE, max = self.MAX_SAFE_SCALE } )
 	
-	local meshPhysZ = props:CreateRow( "Physics Scale", "Physics Z" )
+	local meshPhysZ = props:CreateRow( "Physics Scale - !! Removes constrains if changed !!", "Physics Z" )
 	meshPhysZ:Setup( "Float", { min = self.MIN_SAFE_SCALE, max = self.MAX_SAFE_SCALE } )
 	
 	self:CreateHelpers(props)
@@ -607,7 +607,7 @@ function ENT:CreateMeshMenu()
 end
 
 function ENT:CreateTextureRow(parent, index)
-	local textureURL = parent:CreateRow( "Urls", index )
+	local textureURL = parent:CreateRow( "Urls - Use DEBUG to help map the texture", index )
 	textureURL:Setup( "Generic" )
 	
 	local debugColor = self.DEBUG_MATERIALS_COLORS[index]
@@ -889,7 +889,7 @@ function ENT:CreateHistoryMenu()
 	self:LoadHistory() -- Load history
 	
 	self.UI.HISTORYPANEL = vgui.Create( "DPanel", self.UI.SHEET )
-	self.UI.SHEET:AddSheet( "Saved Meshes", self.UI.HISTORYPANEL, "icon16/book_addresses.png" )
+	self.UI.SHEET:AddSheet( "Saved Props", self.UI.HISTORYPANEL, "icon16/book_addresses.png" )
 	
 	local scroll = vgui.Create( "DScrollPanel", self.UI.HISTORYPANEL) -- Create the Scroll panel
 	scroll.Paint = function(self, w, h)
@@ -1029,7 +1029,7 @@ function ENT:CreateMenu()
 	---------------
 	
 	local updateBtn = vgui.Create( "DButton", self.UI.PANEL )
-	updateBtn:SetText( "Update mesh" )
+	updateBtn:SetText( "Update prop" )
 	updateBtn:Dock( BOTTOM  )
 	updateBtn.DoClick = function()
 		local elements = self.UI.MeshElements

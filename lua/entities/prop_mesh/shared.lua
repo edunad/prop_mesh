@@ -142,8 +142,8 @@ end
 
 function ENT:Clear()
 	self.LOADED_MESH = nil
-	
-	self.LAST_REQUESTED_MESH = nil
+
+	self.LAST_REQUESTED_MESH = {}
 	self.LAST_STATUS = nil
 	self.LAST_MODEL_ERRORED = false
 	self.LAST_PHYSICS_OBB = nil
