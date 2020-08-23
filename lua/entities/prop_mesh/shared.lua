@@ -27,7 +27,7 @@ ENT.MAX_OBJ_SIZE_BYTES = GetConVar( "prop_mesh_maxOBJ_bytes" )
 
 --- LOADED MODEL ---
 ENT.LOADED_MESH = nil
-ENT.LAST_REQUESTED_MESH = {}
+ENT.LAST_REQUESTED_MESH = nil
 ENT.LAST_PHYSICS_OBB = nil
 
 ENT.LAST_MODEL_ERRORED = false
@@ -141,14 +141,21 @@ function ENT:VectorToSafe(scale, obb)
 end
 
 function ENT:Clear()
+	-- Clear currently loaded --
 	self.LOADED_MESH = nil
 
-	self.LAST_REQUESTED_MESH = {}
+	-- Clear last requested --
+	self.LAST_REQUESTED_MESH = nil
+
+	-- Clear status / error ---
 	self.LAST_STATUS = nil
 	self.LAST_MODEL_ERRORED = false
+
+	-- Clear physics --
 	self.LAST_PHYSICS_OBB = nil
-	
 	self:SetDefaultPhysics()
+
+	-- Clear meshes --
 	if CLIENT then self:ClearMeshes() end
 end
 --- UTIL ----
@@ -156,11 +163,21 @@ end
 
 ----------------
 --- Physics ----
-function ENT:CreateOBBPhysics(minOBB, maxOBB)
+function ENT:CreateOBBPhysics(minOBB, maxOBB, forced)
 	if not IsValid(self) then return end
-	
+
 	minOBB = PropMLIB.Util.SafeVector(minOBB, true)
 	maxOBB = PropMLIB.Util.SafeVector(maxOBB, false)
+
+	if not forced then
+		if self.LAST_PHYSICS_OBB and 
+			self.LAST_PHYSICS_OBB.minOBB:IsEqualTol(minOBB,0) and 
+			self.LAST_PHYSICS_OBB.maxOBB:IsEqualTol(maxOBB,0) then
+			return
+		end
+
+		self.LAST_PHYSICS_OBB = {minOBB = minOBB, maxOBB = maxOBB}
+	end
 	
 	if CLIENT then
 		if IsValid( self.__PHYSICS_BOX__ ) then
@@ -192,16 +209,6 @@ function ENT:BuildPhysics(phys, obb)
 	local minOBB = obb.minOBB * safeScale
 	local maxOBB = obb.maxOBB * safeScale
 
-	if self.LAST_PHYSICS_OBB and 
-	self.LAST_PHYSICS_OBB.minOBB:IsEqualTol(minOBB,0) and 
-	self.LAST_PHYSICS_OBB.maxOBB:IsEqualTol(maxOBB,0) then
-		return
-	end
-	
-	self.LAST_PHYSICS_OBB = {
-		minOBB = minOBB,
-		maxOBB = maxOBB
-	}
 	self:CreateOBBPhysics(minOBB, maxOBB)
 end
 
@@ -209,8 +216,9 @@ function ENT:SetDefaultPhysics()
 	local minOBB = Vector(-12, -12, -12)
 	local maxOBB = Vector(12, 12, 12)
 
-	self:CreateOBBPhysics(minOBB, maxOBB)
-	
+	-- Ignore physics check --
+	self:CreateOBBPhysics(minOBB, maxOBB, true)
+
 	if CLIENT then 
 		self:SetRenderBounds(minOBB, maxOBB)
 	end
@@ -241,6 +249,7 @@ end
 
 function ENT:SetScale(scale)
 	if not self.LOADED_MESH then return end
+
 	self.LOADED_MESH.scale = scale
 	self.LAST_REQUESTED_MESH.scale = scale
 	
@@ -266,7 +275,6 @@ function ENT:SetPhysScale(phys, obb)
 
 	if self.LAST_REQUESTED_MESH then
 		self.LAST_REQUESTED_MESH.phys = phys
-		self.LAST_REQUESTED_MESH.obb = obb
 	end
 
 	-- Rebuild collisions
@@ -363,6 +371,7 @@ function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 			-- Being solved, send texture!
 			if PropMLIB.Obj.IsCached(uri) then
 				self:SetStatus("Loading cached model")
+	
 				onSuccess(table_copy(PropMLIB.Obj.Cache[uri]))
 				return PropMLIB.MeshParser.QueueDone()
 			end
@@ -409,7 +418,7 @@ function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 			PropMLIB.MeshParser.QueueDone()
 			
 			if not IsValid(self) then return end
-			return onSuccess(meshData)
+			return onSuccess(table_copy(meshData))
 		end,
 		
 		onFailed = function()
@@ -441,7 +450,7 @@ function ENT:LoadOBJ(uri, isAdmin, onSuccess, onFail)
 end
 
 function ENT:BuildMeshes(meshData)
-	self.LOADED_MESH = meshData
+	self.LOADED_MESH = table_copy(meshData)
 	
 	if CLIENT then self:BuildIMesh(meshData) end
 	self:BuildPhysics(meshData.phys, meshData.obb)

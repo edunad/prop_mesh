@@ -172,9 +172,7 @@ end
 
 function ENT:LocalLoadMesh(requestData)
 	-- Cleanup --
-	if not requestData.duped then 
-		self:Clear() 
-	end
+	if not requestData.duped then self:Clear() end
 	-- ------- --
 	
 	self.LAST_REQUESTED_MESH = table_copy(requestData)
@@ -579,6 +577,10 @@ function ENT:CreateMeshMenu()
 	
 	meshPhysReset.DataChanged = function( _, val )
 		if not val then return end
+		meshPhysX:SetValue(0)
+		meshPhysY:SetValue(0)
+		meshPhysZ:SetValue(0)
+		
 		meshPhysX:SetValue(SXElement:GetValue())
 		meshPhysY:SetValue(SYElement:GetValue())
 		meshPhysZ:SetValue(SZElement:GetValue())
@@ -655,16 +657,29 @@ end
 function ENT:PreFetchMTL(uri, onComplete)
 	HTTP({
 		url = uri,
-		method = "HEAD",
+		method = "GET",
 		headers = {
-			["Range"] = "bytes=0-"
+			["Range"] = "bytes=0-1",
+			["Accept-Encoding"] = "none"
 		},
 		success = function(code, body, headers)
 			if not headers then return onComplete("!! Cannot PRE-FETCH MTL !!") end
-			
-			local fileSize = headers["Content-Length"] or headers["content-length"]
-			if not fileSize then return onComplete("!! Failed to find 'Content-Length' header !!") end
+			local fileSize = nil
+			local fileRange = headers["Content-Range"] or headers["content-range"]
 
+			if fileRange then
+				local range = string.Explode('/', fileRange)
+				if not range or not range[2] then return onComplete("!! Failed to find 'Content-Range' header !!") end
+
+				fileSize = range[2]
+			else
+				if string.StartWith(uri, 'https://pastebin.com') then
+					fileSize = #body
+				else
+					return onComplete("!! Failed to find 'Content-Range' header !!")
+				end
+			end
+			
 			return onComplete(nil, tonumber(fileSize))
 		end,
 		failed = function(err)
@@ -848,10 +863,12 @@ function ENT:AddHistory(addData)
 end
 
 function ENT:LoadHistory()
-	if not file.Exists("prop_mesh/__saved_meshes.json", "DATA") then return end
+	if not file.Exists("prop_mesh/__saved_meshes.json", "DATA") then 
+		return 
+	end
 	
 	local rawHistory = file.Read("prop_mesh/__saved_meshes.json")
-	self.HISTORY_MESHES = util.JSONToTable( rawHistory )
+	self.HISTORY_MESHES = util.JSONToTable( rawHistory ) or {}
 end
 
 function ENT:CreateButtonMaterial(path)
@@ -885,6 +902,35 @@ function ENT:CreateSpawnIcon(uri, panel, iconLayout, onClick, onRightClick)
 	end
 end
 
+function ENT:CreateExamplesMenu()
+	self.UI.EXAMPLEPANEL = vgui.Create( "DPanel", self.UI.SHEET )
+	self.UI.SHEET:AddSheet( "Examples", self.UI.EXAMPLEPANEL, "icon16/lightbulb.png" )
+	local EXAMPLE_LIST = util.JSONToTable('{"1":{"textures":["https://i.imgur.com/Pz7NN5G.png","https://i.imgur.com/Pz7NN5G.png","https://i.imgur.com/Pz7NN5G.png","https://i.imgur.com/Pz7NN5G.png","https://i.imgur.com/Pz7NN5G.png","https://i.imgur.com/Pz7NN5G.png","","","","","","","","","","","","","",""],"scale":"[2 2 2]","uri":"https://pastebin.com/raw.php?i=bk29sfat","phys":"[2 2 2]"},"2":{"textures":["https://i.imgur.com/XgkKhUn.png","https://i.imgur.com/0ub93KD.png","","","","","","","","","","","","","","","","","",""],"scale":"[1 1 1]","uri":"https://pastebin.com/raw.php?i=Kzp4K0DQ","phys":"[1 1 1]"},"3":{"textures":["https://i.imgur.com/jsyUxGy.png","https://i.imgur.com/jsyUxGy.png","https://i.imgur.com/jsyUxGy.png","https://i.imgur.com/jsyUxGy.png","","","","","","","","","","","","","","","",""],"scale":"[20 20 20]","uri":"https://pastebin.com/raw/vxsLQHCL","phys":"[20 10.5 20]"},"4":{"textures":["https://i.rawr.dev/RtXRrOYMK6.png","","","","","","","","","","","","","","","","","","",""],"scale":"[10 10 10]","uri":"https://pastebin.com/raw.php?i=1MZ5nxb4","phys":"[10 10 10]"}}' )
+
+	local ExampleList = vgui.Create( "DListView", self.UI.EXAMPLEPANEL )
+	ExampleList:Dock( FILL )
+	ExampleList:SetMultiSelect( false )
+	ExampleList:AddColumn("Name (Double click to load)")
+	
+	ExampleList:AddLine("Puppet Axyl")
+	ExampleList:AddLine("Lasagna")
+	ExampleList:AddLine("Couch")
+	ExampleList:AddLine("Spyro")
+
+	ExampleList.DoDoubleClick = function(panel, index)
+		if not EXAMPLE_LIST[index] then return end
+
+		local savedData = EXAMPLE_LIST[index]
+		if savedData.textures then
+			savedData.textures = self:SanitizeTextures(savedData.textures)
+		end
+
+		self:UILoadData(savedData)
+		self:UpdateTextureName(savedData)
+		self:UpdateMeshSettings(savedData)
+	end
+end
+
 function ENT:CreateHistoryMenu()
 	self:LoadHistory() -- Load history
 	
@@ -903,7 +949,6 @@ function ENT:CreateHistoryMenu()
 	self.UI.ICONLIST:SetSpaceY( 5 )
 	self.UI.ICONLIST:SetSpaceX( 5 )
 	self.UI.ICONLIST:Layout()
-
 	
 	self:GenerateSpawnIcons()
 end
@@ -958,7 +1003,13 @@ end
 function ENT:UpdateMeshSettings(savedData)
 	if not self.UI or not IsValid(self.UI.PANEL) or not self.UI.MeshElements then return end
 	local elements = self.UI.MeshElements
-	local currentData = savedData or table_copy(self.LAST_REQUESTED_MESH)
+	local currentData = {}
+
+	if savedData then
+		currentData = savedData
+	elseif self.LAST_REQUESTED_MESH then
+		currentData = table_copy(self.LAST_REQUESTED_MESH)
+	end
 	
 	elements.uri:SetValue( currentData.uri or "" )
 	
@@ -1026,6 +1077,8 @@ function ENT:CreateMenu()
 	self:CreateTextureMenu()
 	--- HISTORY ---
 	self:CreateHistoryMenu()
+	--- EXAMPLES ---
+	self:CreateExamplesMenu()
 	---------------
 	
 	local updateBtn = vgui.Create( "DButton", self.UI.PANEL )

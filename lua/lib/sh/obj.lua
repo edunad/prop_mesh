@@ -42,7 +42,7 @@ PropMLIB.Obj.UnRegister = function(uri)
 end
 
 PropMLIB.Obj.Register = function(uri, meshData)
-	PropMLIB.Obj.Cache[uri] = meshData
+	PropMLIB.Obj.Cache[uri] = table_copy(meshData)
 end
 
 PropMLIB.Obj.GetScaledTris = function(subMeshData, scale)

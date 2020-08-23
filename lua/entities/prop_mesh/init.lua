@@ -48,7 +48,7 @@ end
 
 -------------
 --- SEND ----
-function ENT:SendLoadedMesh(ply)
+function ENT:SendLoadedMeshToNewPlayer(ply)
 	local lastMesh = self.LAST_REQUESTED_MESH
 	if not lastMesh or not lastMesh.uri then return end
 	
@@ -97,7 +97,7 @@ end
 ----------------
 --- GENERAL ----
 function ENT:OnNewPlayerJoin(newPly)
-	self:SendLoadedMesh(newPly)
+	self:SendLoadedMeshToNewPlayer(newPly)
 end
 
 function ENT:Use(ply, caller)
@@ -135,9 +135,7 @@ function ENT:Load(uri, textures, scale, phys, duped)
 	-------
 	
 	-- Clear --
-	if not duped then
-		self:Clear() 
-	end
+	if not duped then self:Clear() end
 	-----------
 	
 	self:SetTextures(textures)

@@ -58,6 +58,7 @@ PropMLIB.URLMaterial.LoadMaterialURL = function(uri, success, failure)
 	
 	PANEL.ConsoleMessage = function(panel, data)
 		if not data or string_trim(data) == "" then return end
+
 		if string_find(data, "DATA:") then
 			data = data:gsub("DATA:","")
 			
@@ -84,8 +85,8 @@ PropMLIB.URLMaterial.LoadMaterialURL = function(uri, success, failure)
 					failure = failure
 				})
 			end)
-		else
-			return onFail(data)
+		elseif string_find(data, "FAIL::") then
+			return onFail('Failed to load texture')
 		end
 	end
 	
@@ -120,7 +121,7 @@ PropMLIB.URLMaterial.LoadMaterialURL = function(uri, success, failure)
 						}
 					};
 				</script>
-				<img id='image' onAbort='console.log('Failed to load Image');' onError='console.log('Failed to load Image');' onLoad='onImageLoad();' src="]].. imgURL ..[["/>
+				<img id='image' onAbort='console.log('FAIL::');' onError='console.log('FAIL::');' onLoad='onImageLoad();' src="]].. imgURL ..[["/>
 			</body>
 		</html>
 	]])
