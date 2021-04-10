@@ -20,10 +20,10 @@ local function MakePMESHEnt(ply, data)
 	
 	ent:SetPos(data.Pos)
 	
-	if ent.CPPISetOwner then 
+	if ent.CPPISetOwner then
 		ent:CPPISetOwner(ply)
 	else
-		ent:SetOwner(ply)
+		ent:SetNWEntity("owner", ply)
 	end
 	
 	ent:Spawn()
@@ -41,7 +41,7 @@ function ENT:SpawnFunction( ply, tr )
 	if (not tr.Hit) then return end
 	
 	local SpawnPos = tr.HitPos + tr.HitNormal * 16
-	return MakePMESHEnt(ply, {Pos=SpawnPos})
+	return MakePMESHEnt(ply, {Pos = SpawnPos})
 end
 --- Spawn ----
 --------------
@@ -116,7 +116,7 @@ end
 
 function ENT:Load(uri, textures, scale, phys, duped)
 	if not uri or string_trim(uri) == "" then return end
-	local owner = self:GetOwner()
+	local owner = self:GetNWEntity("owner")
 	if self.CPPIGetOwner then 
 		owner = self:CPPIGetOwner()
 	end

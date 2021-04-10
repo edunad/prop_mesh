@@ -158,7 +158,7 @@ function ENT:CheckMeshCompletion()
 end
 
 function ENT:MeshComplete()
-	local owner = self:GetOwner()
+	local owner = self:GetNWEntity("owner")
 	if self.CPPIGetOwner then owner = self:CPPIGetOwner() end
 	if LocalPlayer() ~= owner then return end
 	

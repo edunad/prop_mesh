@@ -80,7 +80,7 @@ net.Receive("prop_mesh_command", function()
 			return
 		end
 		
-		local owner = ent:GetOwner()
+		local owner = ent:GetNWEntity("owner")
 		if ent.CPPIGetOwner then
 			owner = ent:CPPIGetOwner()
 		end

@@ -28,7 +28,7 @@ net.Receive("prop_mesh_command", function( len, ply )
 	if ent.CPPIGetOwner then
 		isowner = ent:CPPIGetOwner() == ply
 	else
-		isowner = ent:GetOwner() == ply
+		isowner = ent:GetNWEntity("owner") == ply
 	end
 	
 	if not isowner then return end
