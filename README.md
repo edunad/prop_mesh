@@ -54,6 +54,7 @@ SHARED :
 
 ## LINKS
 - [Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2205982705)
+- [Tutorial](https://youtu.be/g1nbhyNAZkU)
 
 ## SCREENSHOTS
 ![](https://i.imgur.com/5p3USX0.png)
