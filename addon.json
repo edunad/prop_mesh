@@ -9,6 +9,7 @@
 		".gitignore",
 		"*.jpg",
 		"*.psd",
+		"prop_mesh.code-workspace",
 		"LICENSE",
 		"README.md"
 	]
