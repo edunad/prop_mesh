@@ -32,7 +32,7 @@ PropMLIB.Registry.NewPlayer = function(newPly)
 end
 
 hook.Add("PlayerInitialSpawn", "__playerspawn_prop_mesh__", function(newPly)
-	timer.Simple(5, function()
+	timer.Simple(10, function()
 		PropMLIB.Registry.NewPlayer(newPly)
 	end)
 end)
