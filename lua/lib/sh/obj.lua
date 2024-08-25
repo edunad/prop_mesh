@@ -421,7 +421,7 @@ PropMLIB.Obj.Parse = function(isAdmin, body, fixNormals)
 		local parsedSubMeshes = {}
 		for _, objMesh in pairs(subMeshes) do
 			if not isAdmin then
-				if objMesh.positionsCount <= 0 or objMesh.positionsCount > maxVertices then
+				if objMesh.positionsCount <= 0 or objMesh.positionsCount > maxTriangles*3 then
 					continue
 				end
 			end
