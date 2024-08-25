@@ -67,7 +67,7 @@ PropMLIB.MeshParser.QueueThink = function ()
 		-- START RENDERING
 		local PARSING_THERSOLD = 0.005
 		local t0 = SysTime ()
-		local finished, statusMessage
+		local success, finished, statusMessage, meshData
 
 		-- COROUTINE
 		while SysTime () - t0 < PARSING_THERSOLD do
@@ -81,6 +81,8 @@ PropMLIB.MeshParser.QueueThink = function ()
 		--- CHECK
 		if currThread then
 			if not success then
+				local error_message = finished or "???"
+				print("MeshParser Failed: " ,debug.traceback(currThread.co,error_message))
 				currThread.onFailed()
 				return
 			end
